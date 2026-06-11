@@ -20,12 +20,16 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AppInit } from "@/components/providers/AppInit";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 export default function RootLayout({
   children,
@@ -38,17 +42,25 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-muted/20">
-        <GoogleOAuthProvider clientId={clientId}>
-          <AppInit>
-            <div className="relative flex min-h-screen w-full flex-col bg-background shadow-xl md:max-w-md md:mx-auto">
-              <main className="flex-1 overflow-y-auto pb-20">{children}</main>
-              <BottomNav />
-            </div>
-          </AppInit>
-        </GoogleOAuthProvider>
-        <Toaster position="top-center" richColors />
+      <body className="min-h-full flex flex-col bg-muted/20 text-base">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <GoogleOAuthProvider clientId={clientId}>
+            <AppInit>
+              <div className="relative z-10 flex min-h-screen w-full flex-col bg-background shadow-2xl md:max-w-md md:mx-auto md:rounded-2xl md:my-4 md:border">
+                <main className="flex-1 overflow-y-auto pb-20">{children}</main>
+                <BottomNav />
+              </div>
+            </AppInit>
+          </GoogleOAuthProvider>
+          <Toaster position="top-center" richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

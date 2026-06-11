@@ -78,16 +78,16 @@ export function TransactionForm() {
     <div className="flex flex-col h-full overflow-hidden">
       <div className="space-y-6 flex-1 overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* Type Toggle */}
-        <div className="flex rounded-lg bg-secondary/30 p-1">
+        <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900 mx-2 mt-2">
           <button
             onClick={() => setType('expense')}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${type === 'expense' ? 'bg-background shadow text-red-500' : 'text-muted-foreground'}`}
+            className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all ${type === 'expense' ? 'bg-white shadow text-red-600 dark:bg-zinc-800 dark:text-red-400' : 'text-zinc-500'}`}
           >
             Pengeluaran
           </button>
           <button
             onClick={() => setType('income')}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${type === 'income' ? 'bg-background shadow text-green-500' : 'text-muted-foreground'}`}
+            className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all ${type === 'income' ? 'bg-white shadow text-green-600 dark:bg-zinc-800 dark:text-green-400' : 'text-zinc-500'}`}
           >
             Pemasukan
           </button>
@@ -141,22 +141,22 @@ export function TransactionForm() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 px-2">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">3. Waktu Transaksi</label>
+            <label className="text-xs font-medium text-zinc-500">3. Waktu Transaksi</label>
             <input 
               type="datetime-local"
-              className="w-full rounded-lg border bg-card p-3 text-sm outline-none focus:border-primary transition-colors"
+              className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
               value={transactionDate}
               onChange={(e) => setTransactionDate(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">Catatan (Opsional)</label>
+            <label className="text-xs font-medium text-zinc-500">Catatan (Opsional)</label>
             <input 
               type="text"
-              className="w-full rounded-lg border bg-card p-3 text-sm outline-none focus:border-primary transition-colors"
+              className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
               placeholder="Makan siang..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

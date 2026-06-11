@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-6",
+  "command": {
+    "dev": {
+      "template": "npm run dev",
+      "description": "Start Next.js dev server"
+    },
+    "build": {
+      "template": "npm run build",
+      "description": "Build the Next.js project"
+    },
+    "lint": {
+      "template": "npm run lint",
+      "description": "Run ESLint"
+    }
+  },
+  "permission": {
+    "edit": "ask",
+    "bash": "ask"
+  }
+}
