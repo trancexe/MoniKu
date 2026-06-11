@@ -3,8 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import * as Icons from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { WalletForm } from "./WalletForm";
 
 export function WalletList() {
   const wallets = useLiveQuery(() => db.wallets.toArray());
@@ -13,9 +12,7 @@ export function WalletList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Dompet</h3>
-        <Button variant="outline" size="sm" className="h-8">
-          <Plus className="mr-1 h-4 w-4" /> Tambah
-        </Button>
+        <WalletForm />
       </div>
 
       <div className="grid gap-3">

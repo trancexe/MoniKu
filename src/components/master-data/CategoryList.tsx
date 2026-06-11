@@ -3,8 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import * as Icons from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { CategoryForm } from "./CategoryForm";
 
 export function CategoryList() {
   const categories = useLiveQuery(() => db.categories.toArray());
@@ -35,9 +34,7 @@ export function CategoryList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Kategori</h3>
-        <Button variant="outline" size="sm" className="h-8">
-          <Plus className="mr-1 h-4 w-4" /> Tambah
-        </Button>
+        <CategoryForm />
       </div>
 
       {renderList(expenses, "Pengeluaran")}
