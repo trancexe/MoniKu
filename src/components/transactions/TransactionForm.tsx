@@ -13,6 +13,11 @@ export function TransactionForm() {
   const [categoryId, setCategoryId] = useState<string>("");
   const [walletId, setWalletId] = useState<string>("");
   const [notes, setNotes] = useState("");
+  const [transactionDate, setTransactionDate] = useState(() => {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  });
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const categories = useLiveQuery(() => 
@@ -38,7 +43,7 @@ export function TransactionForm() {
           category_id: categoryId,
           type,
           amount,
-          date: Date.now(),
+          date: new Date(transactionDate).getTime(),
           notes,
           sync_status: 'pending'
         });
@@ -57,6 +62,11 @@ export function TransactionForm() {
       // Reset form
       setAmountStr("0");
       setNotes("");
+      setTransactionDate(() => {
+        const now = new Date();
+        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 16);
+      });
       toast.success("Transaksi berhasil disimpan!");
     } catch (error) {
       console.error(error);
@@ -65,7 +75,7 @@ export function TransactionForm() {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="space-y-6 flex-1 overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* Type Toggle */}
         <div className="flex rounded-lg bg-secondary/30 p-1">
@@ -117,10 +127,13 @@ export function TransactionForm() {
                     key={w.id}
                     type="button"
                     onClick={() => setWalletId(w.id)}
-                    className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-colors ${walletId === w.id ? 'border-primary bg-primary/10 text-primary' : 'bg-card text-muted-foreground'}`}
+                    className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-colors ${walletId === w.id ? 'border-primary bg-primary/10 text-primary' : 'bg-card text-muted-foreground hover:bg-muted/50'}`}
                   >
                     <Icon className="h-5 w-5 mb-1" />
                     <span className="text-[10px] font-medium text-center line-clamp-1 w-full">{w.name}</span>
+                    <span className={`text-[9px] font-medium text-center line-clamp-1 w-full mt-0.5 ${walletId === w.id ? 'text-primary/80' : 'text-muted-foreground'}`}>
+                      Rp {w.current_balance.toLocaleString("id-ID")}
+                    </span>
                   </button>
                 );
               })}
@@ -128,22 +141,34 @@ export function TransactionForm() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">Catatan (Opsional)</label>
-          <input 
-            type="text"
-            className="w-full rounded-lg border bg-card p-3 text-sm outline-none focus:border-primary transition-colors"
-            placeholder="Makan siang..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">3. Waktu Transaksi</label>
+            <input 
+              type="datetime-local"
+              className="w-full rounded-lg border bg-card p-3 text-sm outline-none focus:border-primary transition-colors"
+              value={transactionDate}
+              onChange={(e) => setTransactionDate(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Catatan (Opsional)</label>
+            <input 
+              type="text"
+              className="w-full rounded-lg border bg-card p-3 text-sm outline-none focus:border-primary transition-colors"
+              placeholder="Makan siang..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="mt-auto border-t pt-4 bg-background">
+      <div className="shrink-0 border-t pt-2 pb-2 bg-background z-10 mt-2">
         {/* Amount Display */}
         <div className="flex flex-col items-center justify-center pb-4">
-          <span className="text-xs font-medium text-muted-foreground mb-1">3. Masukkan Nominal</span>
+          <span className="text-xs font-medium text-muted-foreground mb-1">4. Masukkan Nominal</span>
           <h2 className={`text-4xl font-bold tracking-tight ${type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
             Rp {parseInt(amountStr || "0", 10).toLocaleString("id-ID")}
           </h2>
