@@ -77,7 +77,7 @@ export function DebtList() {
     <div className="space-y-6">
       <div className="rounded-xl border bg-card p-4">
         <label className="text-xs font-medium text-muted-foreground block mb-2">Pilih Dompet untuk Pembayaran</label>
-        <Select value={selectedWallet} onValueChange={(val) => setSelectedWallet(val || "")}>
+        <Select value={selectedWallet} onValueChange={(val) => { if (val !== null) setSelectedWallet(val); }}>
           <SelectTrigger>
             <SelectValue placeholder="Pilih Dompet..." />
           </SelectTrigger>

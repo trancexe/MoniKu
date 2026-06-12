@@ -74,7 +74,7 @@ export function CategoryForm() {
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label>Tipe</Label>
-            <Select value={type} onValueChange={(val: any) => { setType(val); setIcon(val === "expense" ? "Coffee" : "Briefcase"); }}>
+            <Select value={type} onValueChange={(val) => { if (val) { setType(val as "income" | "expense"); setIcon(val === "expense" ? "Coffee" : "Briefcase"); } }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -92,7 +92,7 @@ export function CategoryForm() {
             <Label>Ikon</Label>
             <div className="grid grid-cols-5 gap-2 mt-2 max-h-[200px] overflow-y-auto p-1">
               {currentIcons.map(i => {
-                const Icon = (Icons as any)[i];
+                const Icon = (Icons[i as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
                 return (
                   <button
                     key={i}

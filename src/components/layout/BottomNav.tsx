@@ -1,18 +1,16 @@
 "use client";
 
 import * as React from "react";
+import { useSyncExternalStore } from "react";
 
+const emptySubscribe = () => () => {};
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PlusCircle, PieChart, Settings } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   const navItems = [
     { name: "Home", href: "/", icon: Home },

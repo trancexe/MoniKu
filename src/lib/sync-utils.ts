@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db, Wallet, Category, Transaction, DebtLoan } from "./db";
 
 export async function exportAllData() {
   const data = {
@@ -64,7 +64,7 @@ const backupSchema = z.object({
   version: z.number().optional()
 });
 
-export function validateBackupData(data: any): boolean {
+export function validateBackupData(data: unknown): boolean {
   try {
     backupSchema.parse(data);
     return true;
@@ -94,10 +94,10 @@ export async function importAllData(data: Record<string, unknown>) {
     await db.debt_loans.clear();
 
     // Insert new data
-    if (validData.wallets?.length) await db.wallets.bulkAdd(validData.wallets as any[]);
-    if (validData.categories?.length) await db.categories.bulkAdd(validData.categories as any[]);
-    if (validData.transactions?.length) await db.transactions.bulkAdd(validData.transactions as any[]);
-    if (validData.debt_loans?.length) await db.debt_loans.bulkAdd(validData.debt_loans as any[]);
+    if (validData.wallets?.length) await db.wallets.bulkAdd(validData.wallets as Wallet[]);
+    if (validData.categories?.length) await db.categories.bulkAdd(validData.categories as Category[]);
+    if (validData.transactions?.length) await db.transactions.bulkAdd(validData.transactions as Transaction[]);
+    if (validData.debt_loans?.length) await db.debt_loans.bulkAdd(validData.debt_loans as DebtLoan[]);
   });
 }
 

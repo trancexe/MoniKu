@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useSyncExternalStore } from "react";
+
+const emptySubscribe = () => () => {};
 import { uploadBackup, downloadBackup, getUserEmail, getFreshAccessToken } from "@/lib/gdrive";
 import { exportAllData, importAllData, downloadJsonFile } from "@/lib/sync-utils";
 import { useSyncStore } from "@/lib/sync-store";
@@ -18,19 +20,13 @@ export function SyncSettings() {
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
   const [isLocalRestoreDialogOpen, setIsLocalRestoreDialogOpen] = useState(false);
   const [localRestoreData, setLocalRestoreData] = useState<Record<string, unknown> | null>(null);
-  const [showIOSPWANotice, setShowIOSPWANotice] = useState(false);
+  const showIOSPWANotice = useSyncExternalStore(emptySubscribe, () => isIOSPWA(), () => false);
   
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   const hasClientId = clientId.length > 0;
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const operationInProgress = useRef(false);
-  
-  useEffect(() => {
-    if (isIOSPWA()) {
-      setShowIOSPWANotice(true);
-    }
-  }, []);
   
   function handleGisError(err: unknown, operation: "backup" | "restore") {
     const error = err as Record<string, unknown>;

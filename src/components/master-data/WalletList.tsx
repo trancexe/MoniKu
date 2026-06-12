@@ -33,7 +33,7 @@ export function WalletList() {
       <div className="grid gap-3">
         <RevealStagger className="grid gap-3">
           {wallets?.map((wallet) => {
-            const Icon = (Icons[wallet.icon as keyof typeof Icons] || Icons.Wallet) as any;
+            const Icon = (Icons[wallet.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
             return (
               <div key={wallet.id} className="flex items-center rounded-xl border bg-card p-4 shadow-sm">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">

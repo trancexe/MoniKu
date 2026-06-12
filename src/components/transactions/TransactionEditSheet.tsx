@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction } from "@/lib/db";
 import {
@@ -45,8 +45,12 @@ export function TransactionEditSheet({
     [type]
   );
 
-  // Pre-fill form when transaction changes
-  useEffect(() => {
+  const [prevTransactionId, setPrevTransactionId] = useState<string | undefined>();
+  const [prevOpen, setPrevOpen] = useState<boolean>(false);
+
+  if (transaction?.id !== prevTransactionId || open !== prevOpen) {
+    setPrevTransactionId(transaction?.id);
+    setPrevOpen(open);
     if (transaction && open) {
       setType(transaction.type);
       setAmountStr(String(transaction.amount));
@@ -57,7 +61,7 @@ export function TransactionEditSheet({
       const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
       setTransactionDate(local.toISOString().slice(0, 16));
     }
-  }, [transaction, open]);
+  }
 
   const handleUpdate = async () => {
     if (!transaction) return;

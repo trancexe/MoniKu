@@ -76,7 +76,7 @@ export function WalletForm() {
             <Label>Ikon</Label>
             <div className="grid grid-cols-5 gap-2 mt-2 max-h-[200px] overflow-y-auto p-1">
               {ICONS.map(i => {
-                const Icon = (Icons as any)[i];
+                const Icon = (Icons[i as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
                 return (
                   <button
                     key={i}

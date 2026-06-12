@@ -2,15 +2,13 @@
 
 import { useAuthStore } from "@/lib/auth-store";
 import { AppLock } from "./AppLock";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const emptySubscribe = () => () => {};
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAppLocked, isUnlockedSession } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   // Prevent hydration mismatch
   if (!mounted) {

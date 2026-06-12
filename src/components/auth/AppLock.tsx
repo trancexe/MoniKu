@@ -7,11 +7,11 @@ import { verifyBiometric } from "@/lib/webauthn";
 import { Fingerprint, Delete, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 
 export function AppLock() {
-  const { pinHash, pinSalt, isBiometricEnabled, credentialId, unlockSession, failedAttempts, incrementFailedAttempts, lockoutUntil } = useAuthStore();
+  const { pinHash, pinSalt, isBiometricEnabled, credentialId, unlockSession, incrementFailedAttempts, lockoutUntil } = useAuthStore();
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
 
@@ -20,7 +20,9 @@ export function AppLock() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (lockoutUntil && Date.now() < lockoutUntil) {
-      setLockoutTimeLeft(Math.ceil((lockoutUntil - Date.now()) / 1000));
+      setTimeout(() => {
+        setLockoutTimeLeft(Math.ceil((lockoutUntil - Date.now()) / 1000));
+      }, 0);
       interval = setInterval(() => {
         const left = Math.ceil((lockoutUntil - Date.now()) / 1000);
         if (left <= 0) {
@@ -31,7 +33,9 @@ export function AppLock() {
         }
       }, 1000);
     } else {
-      setLockoutTimeLeft(0);
+      setTimeout(() => {
+        setLockoutTimeLeft(0);
+      }, 0);
     }
     return () => clearInterval(interval);
   }, [lockoutUntil]);

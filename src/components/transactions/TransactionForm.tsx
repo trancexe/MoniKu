@@ -156,7 +156,7 @@ export function TransactionForm() {
               <label className="text-xs font-medium text-muted-foreground">Pilih Jenis Transaksi (Kategori)</label>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
                 {categories?.map(c => {
-                  const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.HelpCircle) as any;
+                  const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
                   return (
                     <button
                       key={c.id}
@@ -176,7 +176,7 @@ export function TransactionForm() {
               <label className="text-xs font-medium text-muted-foreground">Pilih Sumber Uang (Dompet)</label>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
                 {wallets?.map(w => {
-                  const Icon = (Icons[w.icon as keyof typeof Icons] || Icons.Wallet) as any;
+                  const Icon = (Icons[w.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
                   return (
                     <button
                       key={w.id}

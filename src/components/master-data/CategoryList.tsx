@@ -33,7 +33,7 @@ export function CategoryList() {
       <h4 className="text-sm font-medium text-muted-foreground">{title}</h4>
       <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {list?.map((category) => {
-          const Icon = (Icons[category.icon as keyof typeof Icons] || Icons.HelpCircle) as any;
+          const Icon = (Icons[category.icon as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
           return (
             <div key={category.id} className="flex flex-col items-center justify-center space-y-2 rounded-xl border bg-card p-3 shadow-sm text-center">
               <div className={`flex h-10 w-10 items-center justify-center rounded-full ${category.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
