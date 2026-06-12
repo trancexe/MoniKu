@@ -9,6 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { db } from "@/lib/db";
 import { Plus } from "lucide-react";
 import * as Icons from "lucide-react";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const categorySchema = z.object({
+  name: z.string().min(1, "Nama wajib diisi").max(100, "Nama maksimal 100 karakter"),
+});
 
 const EXPENSE_ICONS = [
   "Coffee", "ShoppingCart", "Utensils", "Car", "Home", "HeartPulse", "Plane", 
@@ -32,19 +38,28 @@ export function CategoryForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    const parsed = categorySchema.safeParse({ name });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0].message);
+    }
 
-    await db.categories.add({
-      id: crypto.randomUUID(),
-      name,
-      type,
-      icon,
-    });
+    try {
+      await db.categories.add({
+        id: crypto.randomUUID(),
+        name: parsed.data.name,
+        type,
+        icon,
+      });
 
-    setOpen(false);
-    setName("");
-    setType("expense");
-    setIcon("Coffee");
+      setOpen(false);
+      setName("");
+      setType("expense");
+      setIcon("Coffee");
+      toast.success("Kategori berhasil ditambahkan");
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') console.error(error);
+      toast.error("Gagal menambahkan kategori");
+    }
   };
 
   const currentIcons = type === "expense" ? EXPENSE_ICONS : INCOME_ICONS;

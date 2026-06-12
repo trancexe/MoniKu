@@ -34,7 +34,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "dummy-client-id";
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
   return (
     <html

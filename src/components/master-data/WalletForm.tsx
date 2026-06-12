@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { db } from "@/lib/db";
 import { Plus } from "lucide-react";
 import * as Icons from "lucide-react";
+import { z } from "zod";
+import { toast } from "sonner";
+
+const walletSchema = z.object({
+  name: z.string().min(1, "Nama wajib diisi").max(100, "Nama maksimal 100 karakter"),
+  balance: z.number().min(0, "Saldo tidak boleh negatif").max(1000000000000, "Saldo maksimal adalah 1 Triliun"),
+});
 
 const ICONS = [
   "Wallet", "CreditCard", "Banknote", "PiggyBank", "Coins", "Landmark", 
@@ -24,20 +31,29 @@ export function WalletForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !balance) return;
+    const parsed = walletSchema.safeParse({ name, balance: Number(balance) });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0].message);
+    }
 
-    await db.wallets.add({
-      id: crypto.randomUUID(),
-      name,
-      icon,
-      current_balance: Number(balance),
-      updated_at: Date.now()
-    });
+    try {
+      await db.wallets.add({
+        id: crypto.randomUUID(),
+        name: parsed.data.name,
+        icon,
+        current_balance: parsed.data.balance,
+        updated_at: Date.now()
+      });
 
-    setOpen(false);
-    setName("");
-    setBalance("");
-    setIcon("Wallet");
+      setOpen(false);
+      setName("");
+      setBalance("");
+      setIcon("Wallet");
+      toast.success("Dompet berhasil ditambahkan");
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') console.error(error);
+      toast.error("Gagal menambahkan dompet");
+    }
   };
 
   return (

@@ -56,7 +56,7 @@ export function DebtList() {
       });
       toast.success("Pembayaran tercatat");
     } catch (error) {
-      console.error(error);
+      if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error("Terjadi kesalahan.");
     }
   };

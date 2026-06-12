@@ -18,6 +18,9 @@ export function SyncSettings() {
   const [isLocalRestoreDialogOpen, setIsLocalRestoreDialogOpen] = useState(false);
   const [localRestoreData, setLocalRestoreData] = useState<Record<string, unknown> | null>(null);
   
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+  const hasClientId = clientId.length > 0;
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize/refresh user email when token changes
@@ -155,7 +158,15 @@ export function SyncSettings() {
               <p className="text-sm text-muted-foreground">
                 Backup otomatis dan aman ke akun Google Drive Anda. (100% Gratis)
               </p>
-              <Button onClick={() => login()} className="w-full" variant="outline">
+              <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 p-3 text-xs text-blue-800 dark:text-blue-300">
+                <strong>Catatan:</strong> Karena ini adalah aplikasi lokal (PWA) tanpa server, sesi login Google Drive hanya berlaku selama 1 jam demi keamanan.
+              </div>
+              {!hasClientId && (
+                <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-300">
+                  <strong>Peringatan:</strong> Google Client ID belum dikonfigurasi. Fitur login Google Drive dinonaktifkan.
+                </div>
+              )}
+              <Button onClick={() => login()} disabled={!hasClientId} className="w-full" variant="outline">
                 Hubungkan ke Google Drive
               </Button>
             </div>
@@ -169,7 +180,22 @@ export function SyncSettings() {
                   </p>
                   {userEmail && <p className="text-xs text-muted-foreground mt-1">{userEmail}</p>}
                 </div>
-                <Button variant="ghost" size="sm" onClick={disconnect} className="h-8 text-xs text-destructive hover:text-destructive">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={async () => {
+                    if (googleToken) {
+                      try {
+                        await fetch(`https://oauth2.googleapis.com/revoke?token=${googleToken}`, { method: 'POST', headers: { 'Content-type': 'application/x-www-form-urlencoded' }});
+                      } catch (e) {
+                        if (process.env.NODE_ENV !== 'production') console.error('Token revoke failed:', e);
+                      }
+                    }
+                    disconnect();
+                    toast.success("Berhasil diputuskan");
+                  }} 
+                  className="h-8 text-xs text-destructive hover:text-destructive"
+                >
                   Putus
                 </Button>
               </div>

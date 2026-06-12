@@ -7,14 +7,7 @@ export function AppInit({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Kill any rogue service workers that might be causing infinite reload loops
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (const reg of regs) {
-          reg.unregister();
-        }
-      });
-    }
+    // Removed rogue service worker unregistration loop to restore offline PWA capabilities.
 
     async function init() {
       try {

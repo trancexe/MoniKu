@@ -6,6 +6,12 @@ import { db } from "@/lib/db";
 import { CustomNumpad } from "./CustomNumpad";
 import * as Icons from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const transactionSchema = z.object({
+  amount: z.number().positive("Nominal harus lebih dari 0").max(1000000000000, "Nominal maksimal adalah 1 Triliun"),
+  notes: z.string().max(100, "Catatan maksimal 100 karakter").optional(),
+});
 
 export function TransactionForm() {
   const [type, setType] = useState<'expense' | 'income'>('expense');
@@ -25,16 +31,32 @@ export function TransactionForm() {
   , [type]);
 
   const handleSubmit = async () => {
-    const amount = parseInt(amountStr, 10);
-    if (amount <= 0) return toast.error("Masukkan nominal yang valid");
+    const rawAmount = parseInt(amountStr, 10);
+    
+    const parsed = transactionSchema.safeParse({ amount: rawAmount, notes });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0].message);
+    }
+    const amount = parsed.data.amount;
+
     if (!walletId) return toast.error("Pilih dompet");
     if (!categoryId) return toast.error("Pilih kategori");
 
     try {
+      const wallet = await db.wallets.get(walletId);
+      if (!wallet) throw new Error("Wallet not found");
+
+      if (type === 'expense' && wallet.current_balance - amount < 0) {
+        if (!window.confirm("Transaksi ini akan membuat saldo dompet menjadi negatif. Lanjutkan?")) {
+          return;
+        }
+      }
+
       // Local Ledger Logic - Task 2.4
       await db.transaction('rw', db.transactions, db.wallets, async () => {
-        const wallet = await db.wallets.get(walletId);
-        if (!wallet) throw new Error("Wallet not found");
+        // Re-fetch inside transaction
+        const currentWallet = await db.wallets.get(walletId);
+        if (!currentWallet) throw new Error("Wallet not found");
 
         // Record transaction
         await db.transactions.add({
@@ -44,14 +66,14 @@ export function TransactionForm() {
           type,
           amount,
           date: new Date(transactionDate).getTime(),
-          notes,
+          notes: parsed.data.notes || "",
           sync_status: 'pending'
         });
 
         // Update Wallet Balance
         const newBalance = type === 'income' 
-          ? wallet.current_balance + amount 
-          : wallet.current_balance - amount;
+          ? currentWallet.current_balance + amount 
+          : currentWallet.current_balance - amount;
 
         await db.wallets.update(walletId, {
           current_balance: newBalance,
@@ -69,7 +91,7 @@ export function TransactionForm() {
       });
       toast.success("Transaksi tersimpan");
     } catch (error) {
-      console.error(error);
+      if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error("Gagal menyimpan transaksi");
     }
   };

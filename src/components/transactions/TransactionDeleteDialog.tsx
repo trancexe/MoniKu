@@ -56,7 +56,7 @@ export function TransactionDeleteDialog({
       onOpenChange(false);
       onDeleted?.();
     } catch (error) {
-      console.error(error);
+      if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error("Gagal menghapus transaksi");
     }
   };

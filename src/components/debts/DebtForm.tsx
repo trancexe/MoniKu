@@ -4,6 +4,12 @@ import { useState } from "react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const debtSchema = z.object({
+  personName: z.string().min(1, "Nama wajib diisi").max(100, "Nama maksimal 100 karakter"),
+  amount: z.number().positive("Nominal harus lebih dari 0").max(1000000000000, "Nominal maksimal adalah 1 Triliun"),
+});
 
 export function DebtForm() {
   const [type, setType] = useState<'debt' | 'loan'>('debt');
@@ -12,14 +18,20 @@ export function DebtForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = parseInt(amountStr, 10);
-    if (!personName || !amount || amount <= 0) return toast.error("Data tidak valid");
+    const rawAmount = parseInt(amountStr, 10);
+    
+    const parsed = debtSchema.safeParse({ personName, amount: rawAmount });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0].message);
+    }
+    
+    const amount = parsed.data.amount;
 
     try {
       await db.debt_loans.add({
         id: crypto.randomUUID(),
         type,
-        person_name: personName,
+        person_name: parsed.data.personName,
         total_amount: amount,
         remaining_amount: amount,
         status: 'active'
@@ -28,7 +40,7 @@ export function DebtForm() {
       setAmountStr("");
       toast.success("Tersimpan");
     } catch (error) {
-      console.error(error);
+      if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error("Gagal menyimpan");
     }
   };

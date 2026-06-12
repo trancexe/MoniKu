@@ -13,6 +13,12 @@ import { CustomNumpad } from "./CustomNumpad";
 import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
 import * as Icons from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const transactionSchema = z.object({
+  amount: z.number().positive("Nominal harus lebih dari 0").max(1000000000000, "Nominal maksimal adalah 1 Triliun"),
+  notes: z.string().max(100, "Catatan maksimal 100 karakter").optional(),
+});
 
 interface TransactionEditSheetProps {
   transaction: Transaction | null;
@@ -56,12 +62,37 @@ export function TransactionEditSheet({
   const handleUpdate = async () => {
     if (!transaction) return;
 
-    const amount = parseInt(amountStr, 10);
-    if (amount <= 0) return toast.error("Masukkan nominal yang valid");
+    const rawAmount = parseInt(amountStr, 10);
+    
+    const parsed = transactionSchema.safeParse({ amount: rawAmount, notes });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0].message);
+    }
+    const amount = parsed.data.amount;
+
     if (!walletId) return toast.error("Pilih dompet");
     if (!categoryId) return toast.error("Pilih kategori");
 
     try {
+      const targetWallet = await db.wallets.get(walletId);
+      if (!targetWallet) throw new Error("Wallet not found");
+
+      let currentBalance = targetWallet.current_balance;
+      // If same wallet, simulate the reversal
+      if (walletId === transaction.wallet_id) {
+         currentBalance = transaction.type === "income"
+           ? currentBalance - transaction.amount
+           : currentBalance + transaction.amount;
+      }
+      
+      const newBalance = type === "income" ? currentBalance + amount : currentBalance - amount;
+      
+      if (type === "expense" && newBalance < 0) {
+        if (!window.confirm("Transaksi ini akan membuat saldo dompet menjadi negatif. Lanjutkan?")) {
+          return;
+        }
+      }
+
       await db.transaction("rw", db.transactions, db.wallets, async () => {
         // 1. Reverse old transaction effect on old wallet
         const oldWallet = await db.wallets.get(transaction.wallet_id);
@@ -85,18 +116,18 @@ export function TransactionEditSheet({
 
         if (newWallet) {
           // If same wallet, the balance was already reversed above, so re-fetch
-          const currentBalance =
+          const freshBalance =
             walletId === transaction.wallet_id
               ? (await db.wallets.get(walletId))!.current_balance
               : newWallet.current_balance;
 
-          const newBalance =
+          const freshNewBalance =
             type === "income"
-              ? currentBalance + amount
-              : currentBalance - amount;
+              ? freshBalance + amount
+              : freshBalance - amount;
 
           await db.wallets.update(walletId, {
-            current_balance: newBalance,
+            current_balance: freshNewBalance,
             updated_at: Date.now(),
           });
         }
@@ -108,7 +139,7 @@ export function TransactionEditSheet({
           type,
           amount,
           date: new Date(transactionDate).getTime(),
-          notes,
+          notes: parsed.data.notes || "",
           sync_status: "pending",
         });
       });
@@ -116,7 +147,7 @@ export function TransactionEditSheet({
       toast.success("Transaksi berhasil diperbarui");
       onOpenChange(false);
     } catch (error) {
-      console.error(error);
+      if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error("Gagal memperbarui transaksi");
     }
   };

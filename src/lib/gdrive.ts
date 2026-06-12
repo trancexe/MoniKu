@@ -55,7 +55,7 @@ export async function uploadBackup(accessToken: string) {
       return await res.json();
     }
   } catch (error) {
-    console.error("Backup error:", error);
+    if (process.env.NODE_ENV !== 'production') console.error("Backup error:", error);
     throw error;
   }
 }
@@ -78,7 +78,7 @@ export async function downloadBackup(accessToken: string) {
 
     return true;
   } catch (error) {
-    console.error("Restore error:", error);
+    if (process.env.NODE_ENV !== 'production') console.error("Restore error:", error);
     throw error;
   }
 }
