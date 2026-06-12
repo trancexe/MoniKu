@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
-import { hashPin, verifyPin } from "@/lib/crypto-utils";
+import { hashPin, verifyPin, generateSalt } from "@/lib/crypto-utils";
 import { registerBiometric } from "@/lib/webauthn";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export function SecuritySettings() {
-  const { isAppLocked, pinHash, isBiometricEnabled, setAppLocked, setPinHash, setBiometricEnabled } = useAuthStore();
+  const { isAppLocked, pinHash, pinSalt, isBiometricEnabled, setAppLocked, setPinData, setBiometricEnabled } = useAuthStore();
   
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
   const [pinInput, setPinInput] = useState("");
@@ -45,20 +45,21 @@ export function SecuritySettings() {
         setStep("enter");
         return;
       }
-      const hash = await hashPin(pinInput);
-      setPinHash(hash);
+      const newSalt = generateSalt();
+      const hash = await hashPin(pinInput, newSalt);
+      setPinData(hash, newSalt);
       setAppLocked(true);
       setIsPinDialogOpen(false);
       setPinInput("");
       setConfirmPinInput("");
       toast.success("PIN berhasil diatur dan App Lock aktif");
     } else if (step === "remove") {
-      if (!pinHash) return;
-      const isValid = await verifyPin(pinInput, pinHash);
+      if (!pinHash || !pinSalt) return;
+      const isValid = await verifyPin(pinInput, pinSalt, pinHash);
       if (isValid) {
         setAppLocked(false);
         setBiometricEnabled(false);
-        setPinHash(null);
+        setPinData(null, null);
         setIsPinDialogOpen(false);
         setPinInput("");
         toast.success("App Lock dinonaktifkan");

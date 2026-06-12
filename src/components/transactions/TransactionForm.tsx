@@ -7,6 +7,8 @@ import { CustomNumpad } from "./CustomNumpad";
 import * as Icons from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const transactionSchema = z.object({
   amount: z.number().positive("Nominal harus lebih dari 0").max(1000000000000, "Nominal maksimal adalah 1 Triliun"),
@@ -25,10 +27,57 @@ export function TransactionForm() {
     return local.toISOString().slice(0, 16);
   });
 
+  const [isWarningOpen, setIsWarningOpen] = useState(false);
+  const [pendingTransaction, setPendingTransaction] = useState<{ amount: number, notes: string } | null>(null);
+
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const categories = useLiveQuery(() => 
     db.categories.where("type").equals(type).toArray()
   , [type]);
+
+  const executeTransaction = async (amount: number, parsedNotes: string) => {
+    try {
+      await db.transaction('rw', db.transactions, db.wallets, async () => {
+        const currentWallet = await db.wallets.get(walletId);
+        if (!currentWallet) throw new Error("Wallet not found");
+
+        await db.transactions.add({
+          id: crypto.randomUUID(),
+          wallet_id: walletId,
+          category_id: categoryId,
+          type,
+          amount,
+          date: new Date(transactionDate).getTime(),
+          notes: parsedNotes || "",
+          sync_status: 'pending'
+        });
+
+        const newBalance = type === 'income' 
+          ? currentWallet.current_balance + amount 
+          : currentWallet.current_balance - amount;
+
+        await db.wallets.update(walletId, {
+          current_balance: newBalance,
+          updated_at: Date.now()
+        });
+      });
+
+      setAmountStr("0");
+      setNotes("");
+      setTransactionDate(() => {
+        const now = new Date();
+        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 16);
+      });
+      toast.success("Transaksi tersimpan");
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') console.error(error);
+      toast.error("Gagal menyimpan transaksi");
+    } finally {
+      setIsWarningOpen(false);
+      setPendingTransaction(null);
+    }
+  };
 
   const handleSubmit = async () => {
     const rawAmount = parseInt(amountStr, 10);
@@ -47,52 +96,15 @@ export function TransactionForm() {
       if (!wallet) throw new Error("Wallet not found");
 
       if (type === 'expense' && wallet.current_balance - amount < 0) {
-        if (!window.confirm("Transaksi ini akan membuat saldo dompet menjadi negatif. Lanjutkan?")) {
-          return;
-        }
+        setPendingTransaction({ amount, notes: parsed.data.notes || "" });
+        setIsWarningOpen(true);
+        return;
       }
 
-      // Local Ledger Logic - Task 2.4
-      await db.transaction('rw', db.transactions, db.wallets, async () => {
-        // Re-fetch inside transaction
-        const currentWallet = await db.wallets.get(walletId);
-        if (!currentWallet) throw new Error("Wallet not found");
-
-        // Record transaction
-        await db.transactions.add({
-          id: crypto.randomUUID(),
-          wallet_id: walletId,
-          category_id: categoryId,
-          type,
-          amount,
-          date: new Date(transactionDate).getTime(),
-          notes: parsed.data.notes || "",
-          sync_status: 'pending'
-        });
-
-        // Update Wallet Balance
-        const newBalance = type === 'income' 
-          ? currentWallet.current_balance + amount 
-          : currentWallet.current_balance - amount;
-
-        await db.wallets.update(walletId, {
-          current_balance: newBalance,
-          updated_at: Date.now()
-        });
-      });
-
-      // Reset form
-      setAmountStr("0");
-      setNotes("");
-      setTransactionDate(() => {
-        const now = new Date();
-        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-        return local.toISOString().slice(0, 16);
-      });
-      toast.success("Transaksi tersimpan");
+      await executeTransaction(amount, parsed.data.notes || "");
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
-      toast.error("Gagal menyimpan transaksi");
+      toast.error("Gagal memvalidasi transaksi");
     }
   };
 
@@ -222,6 +234,32 @@ export function TransactionForm() {
           <CustomNumpad value={amountStr} onChange={setAmountStr} onSubmit={handleSubmit} />
         </div>
       </div>
+
+      <Dialog open={isWarningOpen} onOpenChange={setIsWarningOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Peringatan Saldo</DialogTitle>
+            <DialogDescription>
+              Transaksi ini akan membuat saldo dompet menjadi negatif. Apakah Anda yakin ingin melanjutkan?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsWarningOpen(false);
+              setPendingTransaction(null);
+            }}>
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={() => {
+              if (pendingTransaction) {
+                executeTransaction(pendingTransaction.amount, pendingTransaction.notes);
+              }
+            }}>
+              Lanjutkan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

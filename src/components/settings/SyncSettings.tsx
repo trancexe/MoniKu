@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
-import { uploadBackup, downloadBackup, getUserEmail } from "@/lib/gdrive";
+import { uploadBackup, downloadBackup, getUserEmail, getFreshAccessToken } from "@/lib/gdrive";
 import { exportAllData, importAllData, downloadJsonFile } from "@/lib/sync-utils";
 import { useSyncStore } from "@/lib/sync-store";
+import { isIOSPWA, are3rdPartyCookiesBlocked } from "@/lib/platform";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -12,79 +12,104 @@ import * as Icons from "lucide-react";
 import dayjs from "dayjs";
 
 export function SyncSettings() {
-  const { googleToken, userEmail, lastSyncAt, setGoogleToken, setUserEmail, setLastSyncAt, disconnect } = useSyncStore();
+  const { userEmail, lastSyncAt, setLastSyncAt, setUserEmail } = useSyncStore();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
   const [isLocalRestoreDialogOpen, setIsLocalRestoreDialogOpen] = useState(false);
   const [localRestoreData, setLocalRestoreData] = useState<Record<string, unknown> | null>(null);
+  const [showIOSPWANotice, setShowIOSPWANotice] = useState(false);
   
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   const hasClientId = clientId.length > 0;
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Initialize/refresh user email when token changes
+  const operationInProgress = useRef(false);
+  
   useEffect(() => {
-    if (googleToken && !userEmail) {
-      getUserEmail(googleToken).then(email => {
-        if (email) setUserEmail(email);
-      });
+    if (isIOSPWA()) {
+      setShowIOSPWANotice(true);
     }
-  }, [googleToken, userEmail, setUserEmail]);
-
-  const login = useGoogleLogin({
-    onSuccess: (codeResponse) => {
-      setGoogleToken(codeResponse.access_token);
-      getUserEmail(codeResponse.access_token).then(email => {
-        if (email) setUserEmail(email);
-      });
-      toast.success("Berhasil terhubung ke Google Drive");
-    },
-    onError: (error) => {
-      console.error('Login Failed:', error);
-      toast.error("Gagal terhubung ke Google Drive");
-    },
-    scope: "https://www.googleapis.com/auth/drive.appdata"
-  });
+  }, []);
+  
+  function handleGisError(err: unknown, operation: "backup" | "restore") {
+    const error = err as Record<string, unknown>;
+    const errorType = error?.type || error?.message;
+    
+    if (errorType === "popup_closed" || String(errorType).includes("closed")) {
+      toast.info("Login dibatalkan");
+    } else if (errorType === "access_denied") {
+      toast.error("Izin Google Drive ditolak");
+    } else if (String(errorType).includes("popup_failed_to_open")) {
+      toast.error("Popup diblokir browser. Izinkan popup untuk situs ini lalu coba lagi.");
+    } else if (String(errorType).includes("Cookies")) {
+      toast.error("Cookie pihak ketiga diblokir. Aktifkan di pengaturan browser.");
+    } else if (String(errorType).includes("not loaded")) {
+      toast.error("Google Identity Services gagal dimuat. Refresh halaman dan coba lagi.");
+    } else {
+      const msg = operation === "backup" 
+        ? "Gagal backup ke Google Drive" 
+        : "Gagal restore dari Google Drive";
+      toast.error(msg);
+      if (process.env.NODE_ENV !== "production") {
+        console.error(`${operation} error:`, error);
+      }
+    }
+  }
 
   // --- GOOGLE DRIVE HANDLERS ---
+  
   const handleDriveBackup = async () => {
-    if (!googleToken) return toast.error("Silahkan login Google Drive terlebih dahulu");
+    if (operationInProgress.current) return;
+    operationInProgress.current = true;
     setIsLoading(true);
+    
     try {
-      await uploadBackup(googleToken);
+      const token = await getFreshAccessToken(clientId);
+      await uploadBackup(token);
       setLastSyncAt(Date.now());
+      
+      // Try to fetch email without blocking
+      getUserEmail(token).then(email => {
+        if (email) setUserEmail(email);
+      }).catch(() => {});
+      
       toast.success("Backup ke Google Drive selesai");
-    } catch (error) {
-      console.error(error);
-      toast.error("Gagal backup ke Google Drive. Coba relogin.");
+    } catch (error: unknown) {
+      handleGisError(error, "backup");
     } finally {
+      operationInProgress.current = false;
       setIsLoading(false);
     }
   };
-
+  
+  const handleDriveRestoreClick = () => {
+    if (operationInProgress.current) return;
+    setIsRestoreDialogOpen(true);
+  };
+  
   const executeDriveRestore = async () => {
+    if (operationInProgress.current) return;
+    operationInProgress.current = true;
     setIsRestoreDialogOpen(false);
     setIsLoading(true);
+    
     try {
-      await downloadBackup(googleToken!);
+      const token = await getFreshAccessToken(clientId);
+      await downloadBackup(token);
       setLastSyncAt(Date.now());
       toast.success("Restore dari Drive selesai, memuat ulang...");
       setTimeout(() => window.location.reload(), 1500);
-    } catch (error) {
-      console.error(error);
-      toast.error("Gagal restore data (mungkin file tidak ditemukan)");
+    } catch (error: unknown) {
+      handleGisError(error, "restore");
     } finally {
+      operationInProgress.current = false;
       setIsLoading(false);
     }
   };
 
-  const handleDriveRestoreClick = () => {
-    if (!googleToken) return toast.error("Silahkan login Google Drive terlebih dahulu");
-    setIsRestoreDialogOpen(true);
-  };
-
   // --- LOCAL FILE HANDLERS ---
+  
   const handleLocalBackup = async () => {
     try {
       setIsLoading(true);
@@ -152,70 +177,60 @@ export function SyncSettings() {
           <Icons.Cloud className="h-5 w-5" />
           Cloud Backup (Google Drive)
         </h3>
+        
         <div className="rounded-xl border bg-card p-4 shadow-sm space-y-4">
-          {!googleToken ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Backup otomatis dan aman ke akun Google Drive Anda. (100% Gratis)
-              </p>
-              <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 p-3 text-xs text-blue-800 dark:text-blue-300">
-                <strong>Catatan:</strong> Karena ini adalah aplikasi lokal (PWA) tanpa server, sesi login Google Drive hanya berlaku selama 1 jam demi keamanan.
-              </div>
-              {!hasClientId && (
-                <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-300">
-                  <strong>Peringatan:</strong> Google Client ID belum dikonfigurasi. Fitur login Google Drive dinonaktifkan.
-                </div>
-              )}
-              <Button onClick={() => login()} disabled={!hasClientId} className="w-full" variant="outline">
-                Hubungkan ke Google Drive
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-green-600 font-medium dark:text-green-500 flex items-center gap-1">
-                    <Icons.CheckCircle2 className="h-4 w-4" /> 
-                    Terhubung
-                  </p>
-                  {userEmail && <p className="text-xs text-muted-foreground mt-1">{userEmail}</p>}
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={async () => {
-                    if (googleToken) {
-                      try {
-                        await fetch(`https://oauth2.googleapis.com/revoke?token=${googleToken}`, { method: 'POST', headers: { 'Content-type': 'application/x-www-form-urlencoded' }});
-                      } catch (e) {
-                        if (process.env.NODE_ENV !== 'production') console.error('Token revoke failed:', e);
-                      }
-                    }
-                    disconnect();
-                    toast.success("Berhasil diputuskan");
-                  }} 
-                  className="h-8 text-xs text-destructive hover:text-destructive"
-                >
-                  Putus
-                </Button>
-              </div>
-
-              {lastSyncAt && (
-                <p className="text-xs text-muted-foreground">
-                  Terakhir sinkronisasi: {dayjs(lastSyncAt).format('D MMM YYYY, HH:mm')}
-                </p>
-              )}
-              
-              <div className="flex gap-2">
-                <Button onClick={handleDriveBackup} disabled={isLoading} variant="default" className="flex-1">
-                  Backup ke Drive
-                </Button>
-                <Button onClick={handleDriveRestoreClick} disabled={isLoading} variant="secondary" className="flex-1">
-                  Restore
-                </Button>
-              </div>
+          {showIOSPWANotice && (
+            <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-300">
+              <strong>Catatan:</strong> Backup Google Drive tidak dapat dilakukan dari PWA di iOS karena keterbatasan teknis Safari. Silakan buka MoniKu di browser Safari biasa (bukan dari Home Screen) untuk menggunakan fitur ini.
             </div>
           )}
+          
+          {are3rdPartyCookiesBlocked() && (
+            <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-300">
+              <strong>Peringatan:</strong> Cookie pihak ketiga diblokir. Login Google mungkin gagal. Aktifkan di pengaturan browser.
+            </div>
+          )}
+          
+          {!hasClientId && (
+            <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-300">
+              <strong>Peringatan:</strong> Google Client ID belum dikonfigurasi. Fitur login Google Drive dinonaktifkan.
+            </div>
+          )}
+          
+          <p className="text-sm text-muted-foreground">
+            Backup ke akun Google Drive Anda. Klik tombol di bawah untuk memverifikasi sesi Google dan mengunggah backup dengan aman.
+          </p>
+          
+          {lastSyncAt && (
+            <p className="text-xs text-muted-foreground">
+              Terakhir sinkronisasi: {dayjs(lastSyncAt).format("D MMM YYYY, HH:mm")}
+            </p>
+          )}
+          
+          {userEmail && (
+            <p className="text-xs text-muted-foreground">
+              Akun Google: {userEmail}
+            </p>
+          )}
+          
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleDriveBackup} 
+              disabled={isLoading || !hasClientId || showIOSPWANotice} 
+              variant="default" 
+              className="flex-1"
+            >
+              Backup ke Drive
+            </Button>
+            <Button 
+              onClick={handleDriveRestoreClick} 
+              disabled={isLoading || !hasClientId || showIOSPWANotice} 
+              variant="secondary" 
+              className="flex-1"
+            >
+              Restore
+            </Button>
+          </div>
         </div>
       </div>
 

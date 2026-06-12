@@ -12,39 +12,80 @@ export async function exportAllData() {
   return data;
 }
 
+import { z } from "zod";
+
+const walletSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string().optional(),
+  current_balance: z.number(),
+  created_at: z.number().optional(),
+  updated_at: z.number().optional()
+});
+
+const categorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['income', 'expense']),
+  icon: z.string().optional(),
+  created_at: z.number().optional()
+});
+
+const transactionSchema = z.object({
+  id: z.string(),
+  wallet_id: z.string(),
+  category_id: z.string(),
+  type: z.enum(['income', 'expense', 'transfer']),
+  amount: z.number(),
+  date: z.number(),
+  notes: z.string().optional(),
+  sync_status: z.enum(['pending', 'synced']).optional()
+});
+
+const debtLoanSchema = z.object({
+  id: z.string(),
+  type: z.enum(['debt', 'loan']),
+  person_name: z.string(),
+  total_amount: z.number(),
+  remaining_amount: z.number(),
+  due_date: z.number(),
+  status: z.enum(['active', 'paid']),
+  notes: z.string().optional(),
+  created_at: z.number().optional(),
+  updated_at: z.number().optional()
+});
+
+const backupSchema = z.object({
+  wallets: z.array(walletSchema).optional(),
+  categories: z.array(categorySchema).optional(),
+  transactions: z.array(transactionSchema).optional(),
+  debt_loans: z.array(debtLoanSchema).optional(),
+  exportDate: z.number().optional(),
+  version: z.number().optional()
+});
+
 export function validateBackupData(data: any): boolean {
-  if (!data || typeof data !== 'object') return false;
-  
-  const checkArray = (arr: any) => arr === undefined || Array.isArray(arr);
-  
-  if (!checkArray(data.wallets) || 
-      !checkArray(data.categories) || 
-      !checkArray(data.transactions) || 
-      !checkArray(data.debt_loans)) {
+  try {
+    backupSchema.parse(data);
+    return true;
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Validation failed:', error);
+    }
     return false;
   }
-
-  const validateItem = (arr: any[], requiredKeys: string[]) => {
-    if (arr && arr.length > 0) {
-      const item = arr[0];
-      return requiredKeys.every(key => key in item);
-    }
-    return true;
-  };
-
-  if (!validateItem(data.wallets, ['id', 'name', 'current_balance'])) return false;
-  if (!validateItem(data.categories, ['id', 'type', 'name'])) return false;
-  if (!validateItem(data.transactions, ['id', 'wallet_id', 'amount', 'date'])) return false;
-  if (!validateItem(data.debt_loans, ['id', 'type', 'total_amount'])) return false;
-
-  return true;
 }
 
 export async function importAllData(data: Record<string, unknown>) {
-  if (!validateBackupData(data)) {
+  // 1. Strict validation BEFORE clearing database
+  const parsedData = backupSchema.safeParse(data);
+  if (!parsedData.success) {
     throw new Error("Invalid backup data format. Restoration aborted to prevent data loss.");
   }
 
+  const validData = parsedData.data;
+
+  // 2. Perform clear and insert atomically
   return await db.transaction('rw', db.wallets, db.categories, db.transactions, db.debt_loans, async () => {
     // Clear existing data
     await db.wallets.clear();
@@ -53,10 +94,10 @@ export async function importAllData(data: Record<string, unknown>) {
     await db.debt_loans.clear();
 
     // Insert new data
-    if (data.wallets && Array.isArray(data.wallets) && data.wallets.length) await db.wallets.bulkAdd(data.wallets as any[]);
-    if (data.categories && Array.isArray(data.categories) && data.categories.length) await db.categories.bulkAdd(data.categories as any[]);
-    if (data.transactions && Array.isArray(data.transactions) && data.transactions.length) await db.transactions.bulkAdd(data.transactions as any[]);
-    if (data.debt_loans && Array.isArray(data.debt_loans) && data.debt_loans.length) await db.debt_loans.bulkAdd(data.debt_loans as any[]);
+    if (validData.wallets?.length) await db.wallets.bulkAdd(validData.wallets as any[]);
+    if (validData.categories?.length) await db.categories.bulkAdd(validData.categories as any[]);
+    if (validData.transactions?.length) await db.transactions.bulkAdd(validData.transactions as any[]);
+    if (validData.debt_loans?.length) await db.debt_loans.bulkAdd(validData.debt_loans as any[]);
   });
 }
 

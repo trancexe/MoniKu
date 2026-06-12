@@ -3,6 +3,69 @@ import { exportAllData, importAllData } from "./sync-utils";
 export const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 export const BACKUP_FILE_NAME = "fintrack_backup.json";
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: Record<string, unknown>) => { requestAccessToken: () => void };
+        };
+      };
+    };
+  }
+}
+
+/**
+ * Minta access token baru dari Google Identity Services.
+ * Token langsung dikembalikan ke caller, GIS tidak menyimpan.
+ * Caller wajib jaga token di scope lokal dan tidak mem-persist.
+ * 
+ * @throws Error dengan type field untuk GIS-specific errors
+ */
+export async function getFreshAccessToken(
+  clientId: string
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!window.google?.accounts?.oauth2) {
+      reject(new Error("Google Identity Services not loaded. Cek script tag di layout.tsx."));
+      return;
+    }
+    
+    if (!clientId) {
+      reject(new Error("NEXT_PUBLIC_GOOGLE_CLIENT_ID not configured"));
+      return;
+    }
+    
+    let settled = false;
+    
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "https://www.googleapis.com/auth/drive.appdata",
+      
+      callback: (response: { access_token?: string }) => {
+        if (settled) return;
+        settled = true;
+        if (response.access_token) {
+          resolve(response.access_token);
+        } else {
+          reject(new Error("No access_token in GIS response"));
+        }
+      },
+      
+      error_callback: (err: { message?: string; type?: string }) => {
+        if (settled) return;
+        settled = true;
+        // err.type bisa: "popup_closed", "access_denied", "immediate_failed"
+        const error = new Error(err.message || "GIS error") as Error & { type?: string };
+        error.type = err.type;
+        reject(error);
+      },
+    });
+    
+    client.requestAccessToken();
+  });
+}
+
 async function findExistingBackup(accessToken: string) {
   const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${BACKUP_FILE_NAME}'`, {
     headers: { Authorization: `Bearer ${accessToken}` }
