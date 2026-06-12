@@ -44,7 +44,7 @@ export function CustomNumpad({ value, onChange, onSubmit }: CustomNumpadProps) {
               key={idx}
               type="button"
               onClick={handleDelete}
-              className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-xl font-medium active:bg-secondary"
+              className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-xl font-medium transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
             >
               <Delete className="h-6 w-6" />
             </button>
@@ -55,7 +55,7 @@ export function CustomNumpad({ value, onChange, onSubmit }: CustomNumpadProps) {
             key={idx}
             type="button"
             onClick={() => handlePress(key)}
-            className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-2xl font-semibold active:bg-secondary"
+            className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-2xl font-semibold transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
           >
             {key}
           </button>
@@ -64,7 +64,7 @@ export function CustomNumpad({ value, onChange, onSubmit }: CustomNumpadProps) {
       <button
         type="button"
         onClick={onSubmit}
-        className="col-span-3 mt-2 flex h-14 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground active:bg-primary/90"
+        className="col-span-3 mt-2 flex h-14 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
       >
         Simpan Transaksi
       </button>

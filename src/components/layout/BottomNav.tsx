@@ -4,7 +4,7 @@ import * as React from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, PlusCircle, ChartPieSlice, GearSix } from "@phosphor-icons/react";
+import { Home, PlusCircle, PieChart, Settings } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -15,10 +15,10 @@ export function BottomNav() {
   }, []);
 
   const navItems = [
-    { name: "Home", href: "/", icon: House },
+    { name: "Home", href: "/", icon: Home },
     { name: "Transaksi", href: "/transactions", icon: PlusCircle },
-    { name: "Analitik", href: "/analytics", icon: ChartPieSlice },
-    { name: "Setting", href: "/settings", icon: GearSix },
+    { name: "Analitik", href: "/analytics", icon: PieChart },
+    { name: "Setting", href: "/settings", icon: Settings },
   ];
 
   if (!mounted) {

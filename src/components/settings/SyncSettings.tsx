@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { uploadBackup, downloadBackup } from "@/lib/gdrive";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export function SyncSettings() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
 
   const login = useGoogleLogin({
     onSuccess: (codeResponse) => setToken(codeResponse.access_token),
@@ -21,7 +23,7 @@ export function SyncSettings() {
     setIsLoading(true);
     try {
       await uploadBackup(token);
-      toast.success("Backup berhasil!");
+      toast.success("Backup selesai");
     } catch (error) {
       toast.error("Gagal backup data");
     } finally {
@@ -29,20 +31,23 @@ export function SyncSettings() {
     }
   };
 
-  const handleRestore = async () => {
-    if (!token) return toast.error("Silahkan login Google Drive terlebih dahulu");
-    if (!confirm("Data lokal akan ditimpa dengan data dari Drive. Lanjutkan?")) return;
-    
+  const executeRestore = async () => {
+    setIsRestoreDialogOpen(false);
     setIsLoading(true);
     try {
-      await downloadBackup(token);
-      toast.success("Restore berhasil! Aplikasi akan direfresh.");
+      await downloadBackup(token!);
+      toast.success("Restore selesai, memuat ulang...");
       setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       toast.error("Gagal restore data (mungkin file tidak ditemukan)");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRestoreClick = () => {
+    if (!token) return toast.error("Silahkan login Google Drive terlebih dahulu");
+    setIsRestoreDialogOpen(true);
   };
 
   return (
@@ -63,13 +68,32 @@ export function SyncSettings() {
               <Button onClick={handleBackup} disabled={isLoading} variant="default" className="flex-1">
                 Backup
               </Button>
-              <Button onClick={handleRestore} disabled={isLoading} variant="outline" className="flex-1">
+              <Button onClick={handleRestoreClick} disabled={isLoading} variant="outline" className="flex-1">
                 Restore
               </Button>
             </div>
           </div>
         )}
       </div>
+
+      <Dialog open={isRestoreDialogOpen} onOpenChange={setIsRestoreDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Restore</DialogTitle>
+            <DialogDescription>
+              Data lokal saat ini akan ditimpa dengan data dari Google Drive. Apakah Anda yakin ingin melanjutkan?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRestoreDialogOpen(false)} disabled={isLoading}>
+              Batal
+            </Button>
+            <Button variant="default" onClick={executeRestore} disabled={isLoading}>
+              Ya, Restore Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

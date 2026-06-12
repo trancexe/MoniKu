@@ -5,6 +5,9 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users } from "lucide-react";
+import { RevealStagger } from "@/components/ui/RevealStagger";
 
 export function DebtList() {
   const debts = useLiveQuery(() => db.debt_loans.toArray());
@@ -51,32 +54,45 @@ export function DebtList() {
           status: 'paid'
         });
       });
-      toast.success("Pembayaran berhasil!");
+      toast.success("Pembayaran tercatat");
     } catch (error) {
       console.error(error);
       toast.error("Terjadi kesalahan.");
     }
   };
 
+  const isLoading = !debts || !wallets;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-16 w-full rounded-xl bg-muted/60" />
+        <div className="h-32 w-full rounded-xl bg-muted/60" />
+        <div className="h-32 w-full rounded-xl bg-muted/60" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border bg-card p-4">
         <label className="text-xs font-medium text-muted-foreground block mb-2">Pilih Dompet untuk Pembayaran</label>
-        <select 
-          className="w-full rounded-lg border bg-background p-2 text-sm outline-none"
-          value={selectedWallet}
-          onChange={(e) => setSelectedWallet(e.target.value)}
-        >
-          <option value="">Pilih Dompet...</option>
-          {wallets?.map(w => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
+        <Select value={selectedWallet} onValueChange={setSelectedWallet}>
+          <SelectTrigger>
+            <SelectValue placeholder="Pilih Dompet..." />
+          </SelectTrigger>
+          <SelectContent>
+            {wallets?.map(w => (
+              <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-4">
-        {debts?.map(debt => (
-          <div key={debt.id} className="rounded-xl border bg-card p-4 shadow-sm flex flex-col space-y-3">
+        <RevealStagger className="space-y-4">
+          {debts?.map(debt => (
+            <div key={debt.id} className="rounded-xl border bg-card p-4 shadow-sm flex flex-col space-y-3">
             <div className="flex justify-between items-center">
               <div>
                 <span className={`text-xs font-bold uppercase ${debt.type === 'debt' ? 'text-red-500' : 'text-green-500'}`}>
@@ -86,14 +102,14 @@ export function DebtList() {
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Sisa</p>
-                <p className="font-bold">Rp {debt.remaining_amount.toLocaleString("id-ID")}</p>
+                <p className="font-bold tabular-nums">Rp {debt.remaining_amount.toLocaleString("id-ID")}</p>
               </div>
             </div>
             
             {debt.status === 'active' ? (
               <Button 
                 onClick={() => handleRepay(debt.id, debt.remaining_amount, debt.type)}
-                className="w-full"
+                className="w-full tabular-nums active:scale-[0.98] transition-transform"
               >
                 Bayar Lunas (Rp {debt.remaining_amount.toLocaleString("id-ID")})
               </Button>
@@ -104,9 +120,18 @@ export function DebtList() {
             )}
           </div>
         ))}
+        </RevealStagger>
 
         {debts?.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground">Belum ada catatan hutang/piutang.</p>
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-10 text-center dark:bg-zinc-900/50">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+              <Users className="h-6 w-6" />
+            </div>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">Belum ada catatan</p>
+            <p className="mt-1 text-sm text-zinc-500 max-w-[200px]">
+              Catat hutang atau piutang Anda di sini
+            </p>
+          </div>
         )}
       </div>
     </div>

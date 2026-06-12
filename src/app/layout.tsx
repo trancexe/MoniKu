@@ -54,7 +54,7 @@ export default function RootLayout({
           <GoogleOAuthProvider clientId={clientId}>
             <AppInit>
               <div className="relative z-10 flex min-h-screen w-full flex-col bg-background shadow-2xl md:max-w-md md:mx-auto md:rounded-2xl md:my-4 md:border">
-                <main className="flex-1 overflow-y-auto pb-20">{children}</main>
+                <main className="flex-1 overflow-y-auto pb-28">{children}</main>
                 <BottomNav />
               </div>
             </AppInit>

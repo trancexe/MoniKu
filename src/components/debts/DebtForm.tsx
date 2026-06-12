@@ -26,7 +26,7 @@ export function DebtForm() {
       });
       setPersonName("");
       setAmountStr("");
-      toast.success("Tersimpan!");
+      toast.success("Tersimpan");
     } catch (error) {
       console.error(error);
       toast.error("Gagal menyimpan");
@@ -34,19 +34,19 @@ export function DebtForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 rounded-[2rem] border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-950">
+    <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
       <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900">
         <button
           type="button"
           onClick={() => setType('debt')}
-          className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all ${type === 'debt' ? 'bg-white shadow text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50' : 'text-zinc-500'}`}
+          className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all active:scale-[0.98] ${type === 'debt' ? 'bg-background shadow text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50' : 'text-zinc-500'}`}
         >
           Saya Ngutang
         </button>
         <button
           type="button"
           onClick={() => setType('loan')}
-          className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all ${type === 'loan' ? 'bg-white shadow text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50' : 'text-zinc-500'}`}
+          className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all active:scale-[0.98] ${type === 'loan' ? 'bg-background shadow text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50' : 'text-zinc-500'}`}
         >
           Saya Minjamin
         </button>
@@ -74,7 +74,7 @@ export function DebtForm() {
         />
       </div>
 
-      <Button type="submit" className="w-full rounded-full py-6 text-sm font-semibold">Simpan Catatan</Button>
+      <Button type="submit" className="w-full rounded-full py-6 text-sm font-semibold active:scale-[0.98] transition-transform">Simpan Catatan</Button>
     </form>
   );
 }

@@ -48,8 +48,8 @@ export function DashboardOverview() {
       {/* Dashboard Header */}
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-balance">MoniKu</h1>
-          <p className="text-muted-foreground text-sm text-balance">Keuangan Anda</p>
+          <h1 className="text-2xl font-bold tracking-tight">MoniKu</h1>
+          <p className="text-muted-foreground text-sm">Keuangan Anda</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-900 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700">
           <Icons.Wallet className="h-5 w-5" />
@@ -113,12 +113,11 @@ export function DashboardOverview() {
             <RevealStagger className="space-y-2.5">
               {transactions.map(trx => {
                 const category = getCategory(trx.category_id);
-                // @ts-expect-error - dynamic icon lookup
-                const Icon = category?.icon ? Icons[category.icon] : Icons.CircleDollarSign;
+                const Icon = (category?.icon ? Icons[category.icon as keyof typeof Icons] : Icons.CircleDollarSign) as any;
                 const isIncome = trx.type === 'income';
 
                 return (
-                  <div
+                  <article
                     key={trx.id}
                     className="flex items-center justify-between rounded-xl bg-card p-3.5 shadow-sm transition ease-smooth duration-smooth hover:bg-muted/50 active:scale-[0.99]"
                   >
@@ -138,7 +137,7 @@ export function DashboardOverview() {
                     <div className={`shrink-0 font-medium tabular-nums text-sm sm:text-base ${isIncome ? 'text-green-600 dark:text-green-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
                       {isIncome ? '+' : '-'}Rp {trx.amount.toLocaleString("id-ID")}
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </RevealStagger>
