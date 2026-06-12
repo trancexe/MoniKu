@@ -2,6 +2,7 @@ import { WalletList } from "@/components/master-data/WalletList";
 import { CategoryList } from "@/components/master-data/CategoryList";
 import { SyncSettings } from "@/components/settings/SyncSettings";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
 
 export default function SettingsPage() {
   return (
@@ -12,6 +13,10 @@ export default function SettingsPage() {
       </header>
 
       <ThemeSettings />
+
+      <div className="border-t pt-8">
+        <SecuritySettings />
+      </div>
 
       <div className="border-t pt-8">
         <SyncSettings />

@@ -12,7 +12,39 @@ export async function exportAllData() {
   return data;
 }
 
+export function validateBackupData(data: any): boolean {
+  if (!data || typeof data !== 'object') return false;
+  
+  const checkArray = (arr: any) => arr === undefined || Array.isArray(arr);
+  
+  if (!checkArray(data.wallets) || 
+      !checkArray(data.categories) || 
+      !checkArray(data.transactions) || 
+      !checkArray(data.debt_loans)) {
+    return false;
+  }
+
+  const validateItem = (arr: any[], requiredKeys: string[]) => {
+    if (arr && arr.length > 0) {
+      const item = arr[0];
+      return requiredKeys.every(key => key in item);
+    }
+    return true;
+  };
+
+  if (!validateItem(data.wallets, ['id', 'name', 'current_balance'])) return false;
+  if (!validateItem(data.categories, ['id', 'type', 'name'])) return false;
+  if (!validateItem(data.transactions, ['id', 'wallet_id', 'amount', 'date'])) return false;
+  if (!validateItem(data.debt_loans, ['id', 'type', 'total_amount'])) return false;
+
+  return true;
+}
+
 export async function importAllData(data: Record<string, unknown>) {
+  if (!validateBackupData(data)) {
+    throw new Error("Invalid backup data format. Restoration aborted to prevent data loss.");
+  }
+
   return await db.transaction('rw', db.wallets, db.categories, db.transactions, db.debt_loans, async () => {
     // Clear existing data
     await db.wallets.clear();
@@ -21,10 +53,10 @@ export async function importAllData(data: Record<string, unknown>) {
     await db.debt_loans.clear();
 
     // Insert new data
-    if (data.wallets?.length) await db.wallets.bulkAdd(data.wallets);
-    if (data.categories?.length) await db.categories.bulkAdd(data.categories);
-    if (data.transactions?.length) await db.transactions.bulkAdd(data.transactions);
-    if (data.debt_loans?.length) await db.debt_loans.bulkAdd(data.debt_loans);
+    if (data.wallets && Array.isArray(data.wallets) && data.wallets.length) await db.wallets.bulkAdd(data.wallets as any[]);
+    if (data.categories && Array.isArray(data.categories) && data.categories.length) await db.categories.bulkAdd(data.categories as any[]);
+    if (data.transactions && Array.isArray(data.transactions) && data.transactions.length) await db.transactions.bulkAdd(data.transactions as any[]);
+    if (data.debt_loans && Array.isArray(data.debt_loans) && data.debt_loans.length) await db.debt_loans.bulkAdd(data.debt_loans as any[]);
   });
 }
 

@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoniKu
 
-## Getting Started
+> Aplikasi pencatat keuangan pribadi **local-first** dengan backup opsional ke Google Drive.
 
-First, run the development server:
+MoniKu menyimpan data transaksi, dompet, kategori, dan catatan hutang/piutang langsung di browser (IndexedDB). Tidak ada server, tidak ada akun, tidak ada tracking. Backup ke Google Drive murni inisiatif user, lewat OAuth, dan hanya menyentuh folder `appDataFolder` yang terisolasi.
 
+Dibangun sebagai PWA (Progressive Web App) dengan static export, MoniKu bisa dipasang di home-screen ponsel dan berjalan offline.
+
+## Fitur Utama
+
+- **Dashboard** — total saldo gabungan + 10 transaksi terakhir + quick action
+- **Catat Transaksi** — form dengan custom numpad, picker kategori & dompet
+- **Riwayat Transaksi** — dikelompokkan per hari (Hari Ini / Kemarin / tanggal lengkap), filter Pemasukan|Pengeluaran
+- **Edit & Hapus Transaksi** — sheet edit, dialog konfirmasi hapus
+- **Master Data** — CRUD dompet dan kategori dengan icon picker
+- **Hutang/Piutang** — catatan & tombol bayar lunas
+- **Pengaturan** — tema (light / dark / system), backup/restore Google Drive
+- **PWA** — install ke home-screen, berjalan offline (catatan: integrasi SW sedang dalam perbaikan, lihat [PWA](docs/pwa.md))
+
+## Tech Stack
+
+- **Next.js 16.2.9** (App Router, `output: "export"`)
+- **React 19.2.4** + **TypeScript 5** (strict)
+- **Tailwind CSS v4**
+- **shadcn/ui** (variant `base-nova`) di atas `@base-ui/react`
+- **Dexie 4** untuk IndexedDB + `dexie-react-hooks` untuk live queries
+- **`@ducanh2912/next-pwa`** (Workbox) untuk service worker
+- **`@react-oauth/google`** untuk Google Identity Services
+- **next-themes** untuk light/dark/system
+- **dayjs** (locale `id`) untuk format tanggal Indonesia
+- **sonner** untuk toast, **lucide-react** untuk ikon
+
+## Quick Start
+
+### Prasyarat
+- Node.js 20+ (disarankan 22 LTS)
+- Browser modern dengan IndexedDB support (Chrome/Edge/Firefox/Safari versi terkini)
+
+### Install & Jalankan
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# buka http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Di mode development, PWA dinonaktifkan otomatis. Buka DevTools → Application untuk inspeksi IndexedDB (database: `FinTrackDB`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build untuk Produksi
+```bash
+npm run build
+# output: ./out/ (static, siap upload ke hosting statis)
+npm run start  # opsional: serve output lokal untuk sanity check
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Environment Variables
 
-## Learn More
+Salin `.env.example` (jika sudah ada) atau buat `.env.local`:
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Wajib | Keterangan |
+|----------|-------|------------|
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Hanya untuk sync GDrive | OAuth Web Client ID dari Google Cloud Console. Lihat [Google Drive Sync](docs/google-drive-sync.md). |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Script | Fungsi |
+|--------|--------|
+| `npm run dev` | Dev server (webpack, PWA off) |
+| `npm run build` | Build produksi → `out/` (static export) |
+| `npm run start` | Jalankan `out/` secara lokal |
+| `npm run lint` | ESLint |
 
-## Deploy on Vercel
+## Struktur Folder (Ringkas)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/                 # Next.js App Router (pages)
+├── components/
+│   ├── ui/              # shadcn primitives (button, dialog, sheet, ...)
+│   ├── providers/       # ThemeProvider, AppInit
+│   ├── transactions/    # Form, History, Edit, Delete, Numpad
+│   ├── master-data/     # Category & Wallet CRUD
+│   ├── debts/           # Hutang/Piutang
+│   ├── settings/        # Theme, Sync
+│   ├── dashboard/       # DashboardOverview
+│   └── layout/          # BottomNav
+└── lib/
+    ├── db.ts            # Dexie schema + types
+    ├── gdrive.ts        # Google Drive upload/download
+    ├── seed.ts          # Data awal (kategori & dompet default)
+    └── utils.ts         # cn() helper
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Lihat [Architecture](docs/architecture.md) untuk detail data flow & rationale.
+
+## Dokumentasi Lengkap
+
+Mulai dari [docs/INDEX.md](docs/INDEX.md). Highlights:
+
+- [Getting Started](docs/getting-started.md) — setup OAuth, first run, PWA install
+- [Architecture](docs/architecture.md) — high-level design
+- [Data Model](docs/data-model.md) — Dexie schema
+- [Features](docs/features/index.md) — breakdown per fitur
+- [Theming](docs/theming.md) — color tokens, dark mode
+- [PWA](docs/pwa.md) — service worker, status perbaikan
+- [Google Drive Sync](docs/google-drive-sync.md) — OAuth, backup format, security notes
+- [Deployment](docs/deployment.md) — static hosting, headers
+- [Conventions](docs/conventions.md) — code style, naming
+- [Roadmap](docs/roadmap.md) — known issues & planned features
+
+## Status Build
+
+⚠️ **Build TypeScript sedang gagal** di `src/components/debts/DebtList.tsx:80` — masalah typing `Select.onValueChange`. Akan difix dalam iterasi berikutnya. Lihat [Roadmap](docs/roadmap.md).
+
+## Lisensi
+
+Private / Unlicensed.
