@@ -10,14 +10,16 @@ import isToday from "dayjs/plugin/isToday";
 import isYesterday from "dayjs/plugin/isYesterday";
 import { RevealStagger } from "@/components/ui/RevealStagger";
 import { TransactionEditSheet } from "./TransactionEditSheet";
+import { useT, useFormatLocale } from "@/lib/i18n";
 
-dayjs.locale("id");
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
 
 type FilterType = "all" | "income" | "expense";
 
 export function TransactionHistory() {
+  const t = useT();
+  const { formatCurrency, formatTime } = useFormatLocale();
   const [filter, setFilter] = useState<FilterType>("all");
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -42,9 +44,9 @@ export function TransactionHistory() {
     const d = dayjs(trx.date);
     let label: string;
     if (d.isToday()) {
-      label = "Hari Ini";
+      label = t("transaction.today");
     } else if (d.isYesterday()) {
-      label = "Kemarin";
+      label = t("transaction.yesterday");
     } else {
       label = d.format("dddd, D MMMM YYYY");
     }
@@ -60,14 +62,14 @@ export function TransactionHistory() {
   }, []);
 
   const filterOptions: { value: FilterType; label: string }[] = [
-    { value: "all", label: "Semua" },
-    { value: "expense", label: "Pengeluaran" },
-    { value: "income", label: "Pemasukan" },
+    { value: "all", label: t("transaction.filterAll") },
+    { value: "expense", label: t("transaction.filterExpense") },
+    { value: "income", label: t("transaction.filterIncome") },
   ];
 
   if (isLoading) {
     return (
-      <div className="space-y-6 p-4">
+      <div className="space-y-6 p-4" aria-busy="true">
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-9 w-24 animate-pulse rounded-full bg-muted/60" />
@@ -86,10 +88,12 @@ export function TransactionHistory() {
   return (
     <div className="space-y-6">
       {/* Filter Tabs */}
-      <div className="flex gap-2 px-4">
+      <div role="tablist" className="flex gap-2 px-4">
         {filterOptions.map((opt) => (
           <button
             key={opt.value}
+            role="tab"
+            aria-selected={filter === opt.value}
             onClick={() => setFilter(opt.value)}
             className={`rounded-full px-4 py-2 text-xs font-medium transition-all active:scale-[0.97] ${
               filter === opt.value
@@ -109,10 +113,10 @@ export function TransactionHistory() {
             <Icons.Receipt className="h-6 w-6" />
           </div>
           <p className="font-medium text-zinc-900 dark:text-zinc-100">
-            {filter === "all" ? "Belum ada transaksi" : `Belum ada ${filter === "income" ? "pemasukan" : "pengeluaran"}`}
+            {filter === "all" ? t("transaction.emptyAll") : t("transaction.emptyFiltered", { type: filter === "income" ? t("transaction.income") : t("transaction.expense") })}
           </p>
           <p className="mt-1 text-sm text-zinc-500 max-w-[200px]">
-            Mulai catat transaksi keuangan Anda
+            {t("transaction.emptyDescHistory")}
           </p>
         </div>
       ) : (
@@ -135,12 +139,12 @@ export function TransactionHistory() {
                   <div className="flex items-center gap-3 text-[11px] font-medium tabular-nums">
                     {dayIncome > 0 && (
                       <span className="text-green-600 dark:text-green-500">
-                        +Rp {dayIncome.toLocaleString("id-ID")}
+                        +{formatCurrency(dayIncome)}
                       </span>
                     )}
                     {dayExpense > 0 && (
                       <span className="text-red-500 dark:text-red-400">
-                        -Rp {dayExpense.toLocaleString("id-ID")}
+                        -{formatCurrency(dayExpense)}
                       </span>
                     )}
                   </div>
@@ -157,13 +161,14 @@ export function TransactionHistory() {
                     const isIncome = trx.type === "income";
 
                     return (
-                      <article
+                      <button
+                        type="button"
                         key={trx.id}
                         onClick={() => {
                           setSelectedTransaction(trx);
                           setEditOpen(true);
                         }}
-                        className="flex items-center justify-between rounded-xl bg-card p-3.5 shadow-sm transition hover:bg-muted/50 active:scale-[0.99] cursor-pointer select-none"
+                        className="w-full text-left flex items-center justify-between rounded-xl bg-card p-3.5 shadow-sm transition hover:bg-muted/50 active:scale-[0.99] cursor-pointer select-none"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div
@@ -177,10 +182,10 @@ export function TransactionHistory() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">
-                              {category?.name || "Lainnya"}
+                              {category?.name || t("transaction.categoryOther")}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {dayjs(trx.date).format("HH:mm")}
+                              {formatTime(trx.date)}
                               {trx.notes ? ` • ${trx.notes}` : ""}
                             </p>
                           </div>
@@ -193,12 +198,11 @@ export function TransactionHistory() {
                                 : "text-zinc-900 dark:text-zinc-100"
                             }`}
                           >
-                            {isIncome ? "+" : "-"}Rp{" "}
-                            {trx.amount.toLocaleString("id-ID")}
+                            {isIncome ? "+" : "-"}{formatCurrency(trx.amount)}
                           </div>
                           <Icons.ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         </div>
-                      </article>
+                      </button>
                     );
                   })}
                 </RevealStagger>

@@ -7,16 +7,18 @@ const emptySubscribe = () => () => {};
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PlusCircle, PieChart, Settings } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export function BottomNav() {
   const pathname = usePathname();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const t = useT();
 
   const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Transaksi", href: "/transactions", icon: PlusCircle },
-    { name: "Analitik", href: "/analytics", icon: PieChart },
-    { name: "Setting", href: "/settings", icon: Settings },
+    { name: t("nav.home"), href: "/", icon: Home },
+    { name: t("nav.transactions"), href: "/transactions", icon: PlusCircle },
+    { name: t("nav.analytics"), href: "/analytics", icon: PieChart },
+    { name: t("nav.settings"), href: "/settings", icon: Settings },
   ];
 
   if (!mounted) {
@@ -34,9 +36,11 @@ export function BottomNav() {
             <Link
               key={item.name}
               href={item.href}
+              aria-label={item.name}
+              aria-current={isActive ? "page" : undefined}
               className={`relative flex h-12 w-12 flex-col items-center justify-center rounded-full transition-all active:scale-95 ${
-                isActive 
-                  ? "bg-zinc-800 text-zinc-100 dark:bg-zinc-800 dark:text-zinc-50" 
+                isActive
+                  ? "bg-zinc-800 text-zinc-100 dark:bg-zinc-800 dark:text-zinc-50"
                   : "text-zinc-400 hover:text-zinc-200 dark:text-zinc-500 dark:hover:text-zinc-300"
               }`}
             >

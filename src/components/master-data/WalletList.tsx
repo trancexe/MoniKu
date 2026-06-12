@@ -5,13 +5,16 @@ import { db } from "@/lib/db";
 import * as Icons from "lucide-react";
 import { WalletForm } from "./WalletForm";
 import { RevealStagger } from "@/components/ui/RevealStagger";
+import { useT, useFormatLocale } from "@/lib/i18n";
 
 export function WalletList() {
+  const t = useT();
+  const { formatCurrencyRaw } = useFormatLocale();
   const wallets = useLiveQuery(() => db.wallets.toArray());
 
   if (!wallets) {
     return (
-      <div className="space-y-4 animate-pulse">
+      <div className="space-y-4 animate-pulse" aria-busy="true">
         <div className="flex items-center justify-between">
           <div className="h-6 w-24 rounded bg-muted/60" />
           <div className="h-8 w-24 rounded bg-muted/60" />
@@ -26,7 +29,7 @@ export function WalletList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Dompet</h3>
+        <h3 className="font-semibold">{t("wallet.title")}</h3>
         <WalletForm />
       </div>
 
@@ -41,14 +44,19 @@ export function WalletList() {
                 </div>
                 <div className="ml-4 flex-1">
                   <p className="font-medium">{wallet.name}</p>
-                  <p className="text-sm text-muted-foreground tabular-nums">Rp {wallet.current_balance.toLocaleString("id-ID")}</p>
+                  <p className="text-sm text-muted-foreground tabular-nums">{formatCurrencyRaw(wallet.current_balance)}</p>
                 </div>
               </div>
             );
           })}
         </RevealStagger>
         {wallets?.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground">Belum ada dompet.</p>
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-10 text-center dark:bg-zinc-900/50">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+              <Icons.Wallet className="h-6 w-6" />
+            </div>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">{t("wallet.empty")}</p>
+          </div>
         )}
       </div>
     </div>

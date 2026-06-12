@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 
 export function AppLock() {
+  const t = useT();
   const { pinHash, pinSalt, isBiometricEnabled, credentialId, unlockSession, incrementFailedAttempts, lockoutUntil } = useAuthStore();
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
@@ -46,9 +48,9 @@ export function AppLock() {
     if (success) {
       unlockSession();
     } else {
-      toast.error("Biometrik gagal atau dibatalkan");
+      toast.error(t("appLock.biometricFailed"));
     }
-  }, [isBiometricEnabled, credentialId, unlockSession, lockoutTimeLeft]);
+  }, [isBiometricEnabled, credentialId, unlockSession, lockoutTimeLeft, t]);
 
   useEffect(() => {
     // Automatically prompt biometric on load if enabled
@@ -59,7 +61,7 @@ export function AppLock() {
 
   const handleKeypad = async (num: string) => {
     if (pin.length >= 4 || lockoutTimeLeft > 0) return;
-    
+
     const newPin = pin + num;
     setPin(newPin);
     setError(false);
@@ -93,16 +95,20 @@ export function AppLock() {
           <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
             <ShieldAlert className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold">Aplikasi Terkunci</h2>
+          <h2 className="text-2xl font-bold">{t("appLock.title")}</h2>
           <p className="text-muted-foreground text-sm text-center">
-            Masukkan PIN 4-digit Anda untuk membuka MoniKu
+            {t("appLock.desc")}
           </p>
         </div>
 
-        <div className="flex gap-4 mb-8 min-h-[24px] items-center justify-center">
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex gap-4 mb-8 min-h-[24px] items-center justify-center"
+        >
           {lockoutTimeLeft > 0 ? (
             <p className="text-destructive font-medium text-sm animate-pulse">
-              Terkunci. Coba lagi dalam {lockoutTimeLeft} detik
+              {t("appLock.lockoutMessage", { seconds: lockoutTimeLeft })}
             </p>
           ) : (
             dots.map((_, i) => (
@@ -110,10 +116,11 @@ export function AppLock() {
                 key={i}
                 animate={error ? { x: [-5, 5, -5, 5, 0] } : {}}
                 transition={{ duration: 0.4 }}
+                aria-label={`${i + 1} of 4`}
                 className={cn(
                   "w-4 h-4 rounded-full border-2 transition-all duration-200",
-                  pin.length > i 
-                    ? "bg-primary border-primary" 
+                  pin.length > i
+                    ? "bg-primary border-primary"
                     : error ? "border-destructive" : "border-muted"
                 )}
               />
@@ -127,18 +134,20 @@ export function AppLock() {
               key={num}
               variant="outline"
               size="lg"
+              aria-label={`${num}`}
               className="h-16 text-2xl rounded-2xl bg-card border-none shadow-sm hover:bg-muted"
               onClick={() => handleKeypad(num.toString())}
             >
               {num}
             </Button>
           ))}
-          
+
           <div className="flex items-center justify-center">
             {isBiometricEnabled && credentialId && (
               <Button
                 variant="ghost"
                 size="lg"
+                aria-label={t("appLock.biometricFailed")}
                 className="h-16 w-16 rounded-2xl text-primary hover:bg-primary/10"
                 onClick={handleBiometric}
               >
@@ -146,20 +155,22 @@ export function AppLock() {
               </Button>
             )}
           </div>
-          
+
           <Button
             variant="outline"
             size="lg"
+            aria-label="0"
             className="h-16 text-2xl rounded-2xl bg-card border-none shadow-sm hover:bg-muted"
             onClick={() => handleKeypad("0")}
           >
             0
           </Button>
-          
+
           <div className="flex items-center justify-center">
             <Button
               variant="ghost"
               size="lg"
+              aria-label={t("common.delete")}
               className="h-16 w-16 rounded-2xl text-muted-foreground hover:bg-muted"
               onClick={handleDelete}
               disabled={pin.length === 0}

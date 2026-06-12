@@ -4,10 +4,12 @@ import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useSyncExternalStore } from "react";
+import { useT } from "@/lib/i18n";
 
 const emptySubscribe = () => () => {};
 
 export function ThemeSettings() {
+  const t = useT();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
@@ -18,17 +20,17 @@ export function ThemeSettings() {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-medium">Tampilan</h3>
+        <h3 className="text-lg font-medium">{t("theme.title")}</h3>
         <p className="text-sm text-muted-foreground">
-          Sesuaikan tema aplikasi sesuai preferensi Anda.
+          {t("theme.desc")}
         </p>
       </div>
 
       <div className="flex items-center justify-between rounded-lg border p-4 shadow-sm">
         <div className="space-y-0.5 flex flex-col">
-          <Label className="text-base">Mode Gelap (Dark Mode)</Label>
+          <Label className="text-base">{t("theme.darkModeLabel")}</Label>
           <span className="text-[0.8rem] text-muted-foreground">
-            Beralih ke tampilan gelap.
+            {t("theme.darkModeDesc")}
           </span>
         </div>
         <Switch
@@ -39,9 +41,9 @@ export function ThemeSettings() {
 
       <div className="flex items-center justify-between rounded-lg border p-4 shadow-sm">
         <div className="space-y-0.5 flex flex-col">
-          <Label className="text-base">Ikuti Sistem</Label>
+          <Label className="text-base">{t("theme.systemLabel")}</Label>
           <span className="text-[0.8rem] text-muted-foreground">
-            Gunakan tema perangkat Anda secara otomatis.
+            {t("theme.systemDesc")}
           </span>
         </div>
         <Switch

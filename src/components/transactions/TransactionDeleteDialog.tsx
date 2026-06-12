@@ -6,10 +6,7 @@ import { db, Transaction } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import * as Icons from "lucide-react";
-import dayjs from "dayjs";
-import "dayjs/locale/id";
-
-dayjs.locale("id");
+import { useT, useFormatLocale } from "@/lib/i18n";
 
 interface TransactionDeleteDialogProps {
   transaction: Transaction | null;
@@ -24,6 +21,8 @@ export function TransactionDeleteDialog({
   onOpenChange,
   onDeleted,
 }: TransactionDeleteDialogProps) {
+  const t = useT();
+  const { formatDateTime, formatCurrencyRaw } = useFormatLocale();
   const categories = useLiveQuery(() => db.categories.toArray());
   const category = categories?.find((c) => c.id === transaction?.category_id);
   const Icon = category?.icon
@@ -37,7 +36,6 @@ export function TransactionDeleteDialog({
       await db.transaction("rw", db.transactions, db.wallets, async () => {
         const wallet = await db.wallets.get(transaction.wallet_id);
         if (wallet) {
-          // Reverse the balance effect
           const newBalance =
             transaction.type === "income"
               ? wallet.current_balance - transaction.amount
@@ -52,12 +50,12 @@ export function TransactionDeleteDialog({
         await db.transactions.delete(transaction.id);
       });
 
-      toast.success("Transaksi berhasil dihapus");
+      toast.success(t("transaction.deleted"));
       onOpenChange(false);
       onDeleted?.();
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
-      toast.error("Gagal menghapus transaksi");
+      toast.error(t("transaction.deleteFailed"));
     }
   };
 
@@ -69,13 +67,12 @@ export function TransactionDeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Hapus Transaksi?</DialogTitle>
+          <DialogTitle>{t("transaction.deleteTitle")}</DialogTitle>
           <DialogDescription>
-            Tindakan ini tidak bisa dibatalkan. Saldo dompet akan dikembalikan.
+            {t("transaction.deleteConfirmDesc")}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Transaction Summary */}
         <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-4">
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
@@ -87,9 +84,9 @@ export function TransactionDeleteDialog({
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-sm">{category?.name || "Lainnya"}</p>
+            <p className="font-medium text-sm">{category?.name || t("transaction.categoryOther")}</p>
             <p className="text-xs text-muted-foreground">
-              {dayjs(transaction.date).format("D MMM YYYY, HH:mm")}
+              {formatDateTime(transaction.date)}
               {transaction.notes ? ` • ${transaction.notes}` : ""}
             </p>
           </div>
@@ -98,17 +95,17 @@ export function TransactionDeleteDialog({
               isIncome ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"
             }`}
           >
-            {isIncome ? "+" : "-"}Rp {transaction.amount.toLocaleString("id-ID")}
+            {isIncome ? "+" : "-"}{formatCurrencyRaw(transaction.amount)}
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Batal
+            {t("common.cancel")}
           </Button>
           <Button variant="destructive" onClick={handleDelete}>
             <Icons.Trash2 className="mr-1.5 h-4 w-4" />
-            Hapus
+            {t("common.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

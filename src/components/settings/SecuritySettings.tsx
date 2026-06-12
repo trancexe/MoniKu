@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Shield, Fingerprint } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useT } from "@/lib/i18n";
 
 export function SecuritySettings() {
+  const t = useT();
   const { isAppLocked, pinHash, pinSalt, isBiometricEnabled, setAppLocked, setPinData, setBiometricEnabled } = useAuthStore();
-  
+
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [confirmPinInput, setConfirmPinInput] = useState("");
@@ -26,7 +28,7 @@ export function SecuritySettings() {
         setIsPinDialogOpen(true);
       } else {
         setAppLocked(true);
-        toast.success("App Lock diaktifkan");
+        toast.success(t("security.appLockEnabled"));
       }
     } else {
       setStep("remove");
@@ -36,11 +38,11 @@ export function SecuritySettings() {
 
   const handlePinSubmit = async () => {
     if (step === "enter") {
-      if (pinInput.length !== 4) return toast.error("PIN harus 4 digit");
+      if (pinInput.length !== 4) return toast.error(t("security.pinRequired"));
       setStep("confirm");
     } else if (step === "confirm") {
       if (pinInput !== confirmPinInput) {
-        toast.error("PIN tidak cocok");
+        toast.error(t("security.pinMismatch"));
         setConfirmPinInput("");
         setStep("enter");
         return;
@@ -52,7 +54,7 @@ export function SecuritySettings() {
       setIsPinDialogOpen(false);
       setPinInput("");
       setConfirmPinInput("");
-      toast.success("PIN berhasil diatur dan App Lock aktif");
+      toast.success(t("security.pinSuccess"));
     } else if (step === "remove") {
       if (!pinHash || !pinSalt) return;
       const isValid = await verifyPin(pinInput, pinSalt, pinHash);
@@ -62,16 +64,16 @@ export function SecuritySettings() {
         setPinData(null, null);
         setIsPinDialogOpen(false);
         setPinInput("");
-        toast.success("App Lock dinonaktifkan");
+        toast.success(t("security.pinRemoveSuccess"));
       } else {
-        toast.error("PIN salah");
+        toast.error(t("security.pinWrong"));
       }
     }
   };
 
   const handleToggleBiometric = async (checked: boolean) => {
     if (!isAppLocked || !pinHash) {
-      toast.error("Aktifkan PIN terlebih dahulu");
+      toast.error(t("security.biometricEnablePinFirst"));
       return;
     }
 
@@ -79,13 +81,13 @@ export function SecuritySettings() {
       const credId = await registerBiometric();
       if (credId) {
         setBiometricEnabled(true, credId);
-        toast.success("Biometrik berhasil didaftarkan");
+        toast.success(t("security.biometricRegistered"));
       } else {
-        toast.error("Gagal mendaftarkan biometrik");
+        toast.error(t("security.biometricRegisterFailed"));
       }
     } else {
       setBiometricEnabled(false);
-      toast.success("Biometrik dinonaktifkan");
+      toast.success(t("security.biometricDisabled"));
     }
   };
 
@@ -93,18 +95,18 @@ export function SecuritySettings() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary" /> Keamanan
+          <Shield className="w-5 h-5 text-primary" /> {t("security.title")}
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">Lindungi data Anda dengan PIN atau Biometrik</p>
+        <p className="text-sm text-muted-foreground mt-1">{t("security.desc")}</p>
       </div>
 
       <div className="bg-card border rounded-xl p-4 space-y-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <h3 className="font-semibold text-base">Kunci Aplikasi (PIN)</h3>
-            <p className="text-xs text-muted-foreground">Minta PIN 4-digit saat membuka aplikasi</p>
+            <h3 className="font-semibold text-base">{t("security.pinTitle")}</h3>
+            <p className="text-xs text-muted-foreground">{t("security.pinDesc")}</p>
           </div>
-          <Switch 
+          <Switch
             checked={isAppLocked}
             onCheckedChange={handleToggleAppLock}
           />
@@ -114,11 +116,11 @@ export function SecuritySettings() {
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="space-y-0.5">
               <h3 className="font-semibold text-base flex items-center gap-2">
-                <Fingerprint className="w-4 h-4" /> Buka dengan Biometrik
+                <Fingerprint className="w-4 h-4" /> {t("security.biometricTitle")}
               </h3>
-              <p className="text-xs text-muted-foreground">Gunakan sidik jari atau FaceID</p>
+              <p className="text-xs text-muted-foreground">{t("security.biometricDesc")}</p>
             </div>
-            <Switch 
+            <Switch
               checked={isBiometricEnabled}
               onCheckedChange={handleToggleBiometric}
             />
@@ -136,13 +138,13 @@ export function SecuritySettings() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {step === "enter" && "Buat PIN Baru"}
-              {step === "confirm" && "Konfirmasi PIN"}
-              {step === "remove" && "Masukkan PIN Anda"}
+              {step === "enter" && t("security.pinCreateTitle")}
+              {step === "confirm" && t("security.pinConfirmTitle")}
+              {step === "remove" && t("security.pinRemoveTitle")}
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <Input 
+            <Input
               type="password"
               inputMode="numeric"
               maxLength={4}
@@ -158,8 +160,8 @@ export function SecuritySettings() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPinDialogOpen(false)}>Batal</Button>
-            <Button onClick={handlePinSubmit}>Lanjut</Button>
+            <Button variant="outline" onClick={() => setIsPinDialogOpen(false)}>{t("security.pinCancel")}</Button>
+            <Button onClick={handlePinSubmit}>{t("security.pinNext")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

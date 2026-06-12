@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { LocaleProvider } from "@/lib/i18n";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -38,29 +39,31 @@ export default function RootLayout({
 
   return (
     <html
-      lang="en"
+      lang="id"
       className={`${plusJakartaSans.variable} font-sans h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-muted/20 text-base">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <GoogleOAuthProvider clientId={clientId}>
-            <AppInit>
-              <div className="relative z-10 flex min-h-screen w-full flex-col bg-background shadow-2xl md:max-w-md md:mx-auto md:rounded-2xl md:my-4 md:border">
-                <AuthGuard>
-                  <main className="flex-1 overflow-y-auto pb-28">{children}</main>
-                  <BottomNav />
-                </AuthGuard>
-              </div>
-            </AppInit>
-          </GoogleOAuthProvider>
-          <Toaster position="top-center" richColors />
-        </ThemeProvider>
+        <LocaleProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <GoogleOAuthProvider clientId={clientId}>
+              <AppInit>
+                <div className="relative z-10 flex min-h-screen w-full flex-col bg-background shadow-2xl md:max-w-md md:mx-auto md:rounded-2xl md:my-4 md:border">
+                  <AuthGuard>
+                    <main className="flex-1 overflow-y-auto pb-28">{children}</main>
+                    <BottomNav />
+                  </AuthGuard>
+                </div>
+              </AppInit>
+            </GoogleOAuthProvider>
+            <Toaster position="top-center" richColors />
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

@@ -1,15 +1,21 @@
 "use client";
 
 import { Delete } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface CustomNumpadProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   submitLabel?: string;
+  /** Function to compute aria-label for a digit key (e.g. "1", "2", or "1" / "one" for i18n) */
+  ariaLabelNumber?: (n: string) => string;
+  /** aria-label for the delete button */
+  ariaLabelDelete?: string;
 }
 
-export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan Transaksi" }: CustomNumpadProps) {
+export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan Transaksi", ariaLabelNumber, ariaLabelDelete }: CustomNumpadProps) {
+  const t = useT();
   const handlePress = (key: string) => {
     if (value === "0" && key !== "0") {
       onChange(key);
@@ -36,8 +42,14 @@ export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan 
     ["000", "0", "del"],
   ];
 
+  const labelFor = (key: string) => ariaLabelNumber ? ariaLabelNumber(key) : key;
+
   return (
-    <div className="grid w-full grid-cols-3 gap-2 pb-safe-bottom">
+    <div
+      role="group"
+      aria-label={t("numpad.groupLabel")}
+      className="grid w-full grid-cols-3 gap-2 pb-safe-bottom"
+    >
       {keys.flat().map((key, idx) => {
         if (key === "del") {
           return (
@@ -45,6 +57,7 @@ export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan 
               key={idx}
               type="button"
               onClick={handleDelete}
+              aria-label={ariaLabelDelete || "Delete"}
               className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-xl font-medium transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
             >
               <Delete className="h-6 w-6" />
@@ -56,6 +69,7 @@ export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan 
             key={idx}
             type="button"
             onClick={() => handlePress(key)}
+            aria-label={labelFor(key)}
             className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-2xl font-semibold transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
           >
             {key}

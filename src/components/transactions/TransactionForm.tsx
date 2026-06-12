@@ -9,13 +9,17 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-const transactionSchema = z.object({
-  amount: z.number().positive("Nominal harus lebih dari 0").max(1000000000000, "Nominal maksimal adalah 1 Triliun"),
-  notes: z.string().max(100, "Catatan maksimal 100 karakter").optional(),
-});
+import { useT, useFormatLocale } from "@/lib/i18n";
 
 export function TransactionForm() {
+  const t = useT();
+  const { formatCurrencyRaw } = useFormatLocale();
+
+  const makeSchema = () => z.object({
+    amount: z.number().positive(t("validation.amountPositive")).max(1000000000000, t("validation.amountMax")),
+    notes: z.string().max(100, t("validation.notesMax")).optional(),
+  });
+
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amountStr, setAmountStr] = useState("0");
   const [categoryId, setCategoryId] = useState<string>("");
@@ -31,7 +35,7 @@ export function TransactionForm() {
   const [pendingTransaction, setPendingTransaction] = useState<{ amount: number, notes: string } | null>(null);
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
-  const categories = useLiveQuery(() => 
+  const categories = useLiveQuery(() =>
     db.categories.where("type").equals(type).toArray()
   , [type]);
 
@@ -52,8 +56,8 @@ export function TransactionForm() {
           sync_status: 'pending'
         });
 
-        const newBalance = type === 'income' 
-          ? currentWallet.current_balance + amount 
+        const newBalance = type === 'income'
+          ? currentWallet.current_balance + amount
           : currentWallet.current_balance - amount;
 
         await db.wallets.update(walletId, {
@@ -69,10 +73,10 @@ export function TransactionForm() {
         const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
         return local.toISOString().slice(0, 16);
       });
-      toast.success("Transaksi tersimpan");
+      toast.success(t("transaction.saved"));
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
-      toast.error("Gagal menyimpan transaksi");
+      toast.error(t("transaction.saveFailed"));
     } finally {
       setIsWarningOpen(false);
       setPendingTransaction(null);
@@ -81,15 +85,16 @@ export function TransactionForm() {
 
   const handleSubmit = async () => {
     const rawAmount = parseInt(amountStr, 10);
-    
+    const transactionSchema = makeSchema();
+
     const parsed = transactionSchema.safeParse({ amount: rawAmount, notes });
     if (!parsed.success) {
       return toast.error(parsed.error.issues[0].message);
     }
     const amount = parsed.data.amount;
 
-    if (!walletId) return toast.error("Pilih dompet");
-    if (!categoryId) return toast.error("Pilih kategori");
+    if (!walletId) return toast.error(t("transaction.selectWallet"));
+    if (!categoryId) return toast.error(t("transaction.selectCategory"));
 
     try {
       const wallet = await db.wallets.get(walletId);
@@ -104,7 +109,7 @@ export function TransactionForm() {
       await executeTransaction(amount, parsed.data.notes || "");
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
-      toast.error("Gagal memvalidasi transaksi");
+      toast.error(t("transaction.validateFailed"));
     }
   };
 
@@ -112,7 +117,7 @@ export function TransactionForm() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full space-y-6 p-4">
+      <div className="flex flex-col h-full space-y-6 p-4" aria-busy="true">
         <div className="h-10 w-full animate-pulse rounded-full bg-muted/60" />
         <div className="space-y-2">
           <div className="h-4 w-32 animate-pulse rounded bg-muted/60" />
@@ -135,34 +140,40 @@ export function TransactionForm() {
       <div className="flex-1 overflow-y-auto pb-[380px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="space-y-6 p-2">
           {/* Type Toggle */}
-          <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900 mx-2 mt-2">
+          <div role="tablist" className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900 mx-2 mt-2">
             <button
+              role="tab"
+              aria-selected={type === 'expense'}
               onClick={() => setType('expense')}
               className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all active:scale-[0.98] ${type === 'expense' ? 'bg-white shadow text-red-600 dark:bg-zinc-800 dark:text-red-400' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
             >
-              Pengeluaran
+              {t("transaction.expense")}
             </button>
             <button
+              role="tab"
+              aria-selected={type === 'income'}
               onClick={() => setType('income')}
               className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all active:scale-[0.98] ${type === 'income' ? 'bg-white shadow text-green-600 dark:bg-zinc-800 dark:text-green-400' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
             >
-              Pemasukan
+              {t("transaction.income")}
             </button>
           </div>
 
           {/* Quick Pickers */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Pilih Jenis Transaksi (Kategori)</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("transaction.typeCategory")}</label>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
                 {categories?.map(c => {
                   const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
+                  const isSelected = categoryId === c.id;
                   return (
                     <button
                       key={c.id}
                       type="button"
                       onClick={() => setCategoryId(c.id)}
-                      className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${categoryId === c.id ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
+                      aria-pressed={isSelected}
+                      className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${isSelected ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
                     >
                       <Icon className="h-5 w-5 mb-1" />
                       <span className="text-[11px] font-medium text-center line-clamp-1 w-full">{c.name}</span>
@@ -173,21 +184,23 @@ export function TransactionForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Pilih Sumber Uang (Dompet)</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("transaction.typeWallet")}</label>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
                 {wallets?.map(w => {
                   const Icon = (Icons[w.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
+                  const isSelected = walletId === w.id;
                   return (
                     <button
                       key={w.id}
                       type="button"
                       onClick={() => setWalletId(w.id)}
-                      className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${walletId === w.id ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
+                      aria-pressed={isSelected}
+                      className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${isSelected ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
                     >
                       <Icon className="h-5 w-5 mb-1" />
-                      <span className="text-[11px] font-medium text-center line-clamp-1 w-full">{w.name}</span>
-                      <span className={`text-[10px] font-medium text-center line-clamp-1 w-full mt-0.5 ${walletId === w.id ? 'text-primary/80' : 'text-muted-foreground'}`}>
-                        Rp {w.current_balance.toLocaleString("id-ID")}
+                      <span className="text-[11px] font-medium text-center line-clamp-2 w-full leading-tight">{w.name}</span>
+                      <span className={`text-[10px] font-medium text-center line-clamp-1 w-full mt-0.5 ${isSelected ? 'text-primary/80' : 'text-muted-foreground'}`}>
+                        {formatCurrencyRaw(w.current_balance)}
                       </span>
                     </button>
                   );
@@ -198,8 +211,8 @@ export function TransactionForm() {
 
           <div className="space-y-4 px-2">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-zinc-500">Waktu Transaksi</label>
-              <input 
+              <label className="text-xs font-medium text-zinc-500">{t("transaction.date")}</label>
+              <input
                 type="datetime-local"
                 className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
                 value={transactionDate}
@@ -208,11 +221,11 @@ export function TransactionForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-zinc-500">Catatan (Opsional)</label>
-              <input 
+              <label className="text-xs font-medium text-zinc-500">{t("transaction.notes")}</label>
+              <input
                 type="text"
                 className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
-                placeholder="Makan siang..."
+                placeholder={t("transaction.notesPlaceholder")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -226,21 +239,28 @@ export function TransactionForm() {
         <div className="border-t pt-2 pb-2 bg-background px-4">
           {/* Amount Display */}
           <div className="flex flex-col items-center justify-center pb-4">
-            <span className="text-xs font-medium text-muted-foreground mb-1">Masukkan Nominal</span>
+            <span className="text-xs font-medium text-muted-foreground mb-1">{t("transaction.amount")}</span>
             <h2 className={`text-4xl font-bold tracking-tight ${type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
-              Rp {parseInt(amountStr || "0", 10).toLocaleString("id-ID")}
+              {formatCurrencyRaw(parseInt(amountStr || "0", 10))}
             </h2>
           </div>
-          <CustomNumpad value={amountStr} onChange={setAmountStr} onSubmit={handleSubmit} />
+          <CustomNumpad
+            value={amountStr}
+            onChange={setAmountStr}
+            onSubmit={handleSubmit}
+            submitLabel={t("transaction.saveTransaction")}
+            ariaLabelNumber={(n) => `${n}`}
+            ariaLabelDelete={t("common.delete")}
+          />
         </div>
       </div>
 
       <Dialog open={isWarningOpen} onOpenChange={setIsWarningOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-destructive">Peringatan Saldo</DialogTitle>
+            <DialogTitle className="text-destructive">{t("transaction.negativeWarningTitle")}</DialogTitle>
             <DialogDescription>
-              Transaksi ini akan membuat saldo dompet menjadi negatif. Apakah Anda yakin ingin melanjutkan?
+              {t("transaction.negativeWarningDesc")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -248,14 +268,14 @@ export function TransactionForm() {
               setIsWarningOpen(false);
               setPendingTransaction(null);
             }}>
-              Batal
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={() => {
               if (pendingTransaction) {
                 executeTransaction(pendingTransaction.amount, pendingTransaction.notes);
               }
             }}>
-              Lanjutkan
+              {t("transaction.continue")}
             </Button>
           </DialogFooter>
         </DialogContent>
