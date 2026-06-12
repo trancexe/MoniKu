@@ -1,0 +1,218 @@
+"use client";
+
+import { useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db, Transaction } from "@/lib/db";
+import * as Icons from "lucide-react";
+import dayjs from "dayjs";
+import "dayjs/locale/id";
+import isToday from "dayjs/plugin/isToday";
+import isYesterday from "dayjs/plugin/isYesterday";
+import { RevealStagger } from "@/components/ui/RevealStagger";
+import { TransactionEditSheet } from "./TransactionEditSheet";
+
+dayjs.locale("id");
+dayjs.extend(isToday);
+dayjs.extend(isYesterday);
+
+type FilterType = "all" | "income" | "expense";
+
+export function TransactionHistory() {
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  const allTransactions = useLiveQuery(
+    () => db.transactions.orderBy("date").reverse().toArray()
+  );
+  const categories = useLiveQuery(() => db.categories.toArray());
+
+  const isLoading = !allTransactions || !categories;
+
+  const transactions = allTransactions?.filter((t) =>
+    filter === "all" ? true : t.type === filter
+  );
+
+  const getCategory = (id: string) => categories?.find((c) => c.id === id);
+
+  // Group transactions by date
+  const groupedTransactions = transactions?.reduce<
+    { label: string; date: string; items: Transaction[] }[]
+  >((groups, trx) => {
+    const d = dayjs(trx.date);
+    let label: string;
+    if (d.isToday()) {
+      label = "Hari Ini";
+    } else if (d.isYesterday()) {
+      label = "Kemarin";
+    } else {
+      label = d.format("dddd, D MMMM YYYY");
+    }
+    const dateKey = d.format("YYYY-MM-DD");
+
+    const existing = groups.find((g) => g.date === dateKey);
+    if (existing) {
+      existing.items.push(trx);
+    } else {
+      groups.push({ label, date: dateKey, items: [trx] });
+    }
+    return groups;
+  }, []);
+
+  const filterOptions: { value: FilterType; label: string }[] = [
+    { value: "all", label: "Semua" },
+    { value: "expense", label: "Pengeluaran" },
+    { value: "income", label: "Pemasukan" },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-4">
+        <div className="flex gap-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-9 w-24 animate-pulse rounded-full bg-muted/60" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          <div className="h-5 w-32 animate-pulse rounded bg-muted/60" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted/60" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Filter Tabs */}
+      <div className="flex gap-2 px-4">
+        {filterOptions.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setFilter(opt.value)}
+            className={`rounded-full px-4 py-2 text-xs font-medium transition-all active:scale-[0.97] ${
+              filter === opt.value
+                ? "bg-zinc-900 text-zinc-50 shadow dark:bg-zinc-100 dark:text-zinc-900"
+                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Transaction Groups */}
+      {!transactions || transactions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-10 text-center dark:bg-zinc-900/50 mx-4">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+            <Icons.Receipt className="h-6 w-6" />
+          </div>
+          <p className="font-medium text-zinc-900 dark:text-zinc-100">
+            {filter === "all" ? "Belum ada transaksi" : `Belum ada ${filter === "income" ? "pemasukan" : "pengeluaran"}`}
+          </p>
+          <p className="mt-1 text-sm text-zinc-500 max-w-[200px]">
+            Mulai catat transaksi keuangan Anda
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6 px-4">
+          {groupedTransactions?.map((group) => {
+            // Calculate daily total
+            const dayIncome = group.items
+              .filter((t) => t.type === "income")
+              .reduce((sum, t) => sum + t.amount, 0);
+            const dayExpense = group.items
+              .filter((t) => t.type === "expense")
+              .reduce((sum, t) => sum + t.amount, 0);
+
+            return (
+              <div key={group.date}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {group.label}
+                  </h3>
+                  <div className="flex items-center gap-3 text-[11px] font-medium tabular-nums">
+                    {dayIncome > 0 && (
+                      <span className="text-green-600 dark:text-green-500">
+                        +Rp {dayIncome.toLocaleString("id-ID")}
+                      </span>
+                    )}
+                    {dayExpense > 0 && (
+                      <span className="text-red-500 dark:text-red-400">
+                        -Rp {dayExpense.toLocaleString("id-ID")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <RevealStagger className="space-y-2">
+                  {group.items.map((trx) => {
+                    const category = getCategory(trx.category_id);
+                    const Icon = (
+                      category?.icon
+                        ? Icons[category.icon as keyof typeof Icons]
+                        : Icons.CircleDollarSign
+                    ) as React.ComponentType<{ className?: string }>;
+                    const isIncome = trx.type === "income";
+
+                    return (
+                      <article
+                        key={trx.id}
+                        onClick={() => {
+                          setSelectedTransaction(trx);
+                          setEditOpen(true);
+                        }}
+                        className="flex items-center justify-between rounded-xl bg-card p-3.5 shadow-sm transition hover:bg-muted/50 active:scale-[0.99] cursor-pointer select-none"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                              isIncome
+                                ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                            }`}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">
+                              {category?.name || "Lainnya"}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {dayjs(trx.date).format("HH:mm")}
+                              {trx.notes ? ` • ${trx.notes}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`shrink-0 font-medium tabular-nums text-sm ${
+                              isIncome
+                                ? "text-green-600 dark:text-green-500"
+                                : "text-zinc-900 dark:text-zinc-100"
+                            }`}
+                          >
+                            {isIncome ? "+" : "-"}Rp{" "}
+                            {trx.amount.toLocaleString("id-ID")}
+                          </div>
+                          <Icons.ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        </div>
+                      </article>
+                    );
+                  })}
+                </RevealStagger>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <TransactionEditSheet
+        transaction={selectedTransaction}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+    </div>
+  );
+}

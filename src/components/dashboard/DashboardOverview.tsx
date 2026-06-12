@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, Transaction } from "@/lib/db";
 import * as Icons from "lucide-react";
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
 import { RevealStagger } from "@/components/ui/RevealStagger";
+import { TransactionEditSheet } from "@/components/transactions/TransactionEditSheet";
+import Link from "next/link";
 
 dayjs.locale('id');
 
@@ -14,6 +17,8 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 export function DashboardOverview() {
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const transactions = useLiveQuery(() => 
     db.transactions.orderBy('date').reverse().limit(10).toArray()
@@ -87,7 +92,7 @@ export function DashboardOverview() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-base sm:text-lg">Transaksi Terakhir</h3>
           {transactions.length > 0 && (
-            <button className="text-sm font-medium text-primary hover:underline transition">Lihat Semua</button>
+            <Link href="/transactions/history" className="text-sm font-medium text-primary hover:underline transition">Lihat Semua</Link>
           )}
         </div>
 
@@ -119,7 +124,11 @@ export function DashboardOverview() {
                 return (
                   <article
                     key={trx.id}
-                    className="flex items-center justify-between rounded-xl bg-card p-3.5 shadow-sm transition ease-smooth duration-smooth hover:bg-muted/50 active:scale-[0.99]"
+                    onClick={() => {
+                      setSelectedTransaction(trx);
+                      setEditOpen(true);
+                    }}
+                    className="flex items-center justify-between rounded-xl bg-card p-3.5 shadow-sm transition ease-smooth duration-smooth hover:bg-muted/50 active:scale-[0.99] cursor-pointer select-none"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
@@ -134,8 +143,11 @@ export function DashboardOverview() {
                         <p className="text-xs sm:text-sm text-muted-foreground truncate">{dayjs(trx.date).format('D MMM YYYY, HH:mm')} • {trx.notes || '-'}</p>
                       </div>
                     </div>
-                    <div className={`shrink-0 font-medium tabular-nums text-sm sm:text-base ${isIncome ? 'text-green-600 dark:text-green-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                      {isIncome ? '+' : '-'}Rp {trx.amount.toLocaleString("id-ID")}
+                    <div className="flex items-center gap-2">
+                      <div className={`shrink-0 font-medium tabular-nums text-sm sm:text-base ${isIncome ? 'text-green-600 dark:text-green-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                        {isIncome ? '+' : '-'}Rp {trx.amount.toLocaleString("id-ID")}
+                      </div>
+                      <Icons.ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                     </div>
                   </article>
                 );
@@ -144,6 +156,12 @@ export function DashboardOverview() {
           )}
         </div>
       </section>
+
+      <TransactionEditSheet
+        transaction={selectedTransaction}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </div>
   );
 }

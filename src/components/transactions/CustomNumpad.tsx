@@ -6,9 +6,10 @@ interface CustomNumpadProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  submitLabel?: string;
 }
 
-export function CustomNumpad({ value, onChange, onSubmit }: CustomNumpadProps) {
+export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan Transaksi" }: CustomNumpadProps) {
   const handlePress = (key: string) => {
     if (value === "0" && key !== "0") {
       onChange(key);
@@ -66,7 +67,7 @@ export function CustomNumpad({ value, onChange, onSubmit }: CustomNumpadProps) {
         onClick={onSubmit}
         className="col-span-3 mt-2 flex h-14 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
       >
-        Simpan Transaksi
+        {submitLabel}
       </button>
     </div>
   );

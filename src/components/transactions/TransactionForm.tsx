@@ -131,7 +131,7 @@ export function TransactionForm() {
                       className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${categoryId === c.id ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
                     >
                       <Icon className="h-5 w-5 mb-1" />
-                      <span className="text-[10px] font-medium text-center line-clamp-1 w-full">{c.name}</span>
+                      <span className="text-[11px] font-medium text-center line-clamp-1 w-full">{c.name}</span>
                     </button>
                   );
                 })}
@@ -151,8 +151,8 @@ export function TransactionForm() {
                       className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${walletId === w.id ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
                     >
                       <Icon className="h-5 w-5 mb-1" />
-                      <span className="text-[10px] font-medium text-center line-clamp-1 w-full">{w.name}</span>
-                      <span className={`text-[9px] font-medium text-center line-clamp-1 w-full mt-0.5 ${walletId === w.id ? 'text-primary/80' : 'text-muted-foreground'}`}>
+                      <span className="text-[11px] font-medium text-center line-clamp-1 w-full">{w.name}</span>
+                      <span className={`text-[10px] font-medium text-center line-clamp-1 w-full mt-0.5 ${walletId === w.id ? 'text-primary/80' : 'text-muted-foreground'}`}>
                         Rp {w.current_balance.toLocaleString("id-ID")}
                       </span>
                     </button>
