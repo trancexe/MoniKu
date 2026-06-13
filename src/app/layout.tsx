@@ -19,7 +19,6 @@ export const viewport: Viewport = {
   themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -44,6 +43,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-muted/20 text-base">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <LocaleProvider>
           <ThemeProvider
             attribute="class"
@@ -55,7 +60,7 @@ export default function RootLayout({
               <AppInit>
                 <div className="relative z-10 flex min-h-screen w-full flex-col bg-background shadow-2xl md:max-w-md md:mx-auto md:rounded-2xl md:my-4 md:border">
                   <AuthGuard>
-                    <main className="flex-1 overflow-y-auto pb-28">{children}</main>
+                    <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto pb-28 outline-none">{children}</main>
                     <BottomNav />
                   </AuthGuard>
                 </div>
