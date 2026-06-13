@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import * as Icons from "lucide-react";
 import dayjs from "dayjs";
 import { useT } from "@/lib/i18n";
+import { logError } from "@/lib/logger";
 
 export function SyncSettings() {
   const t = useT();
@@ -49,9 +50,7 @@ export function SyncSettings() {
         ? t("sync.backupFailed")
         : t("sync.restoreFailed");
       toast.error(msg);
-      if (process.env.NODE_ENV !== "production") {
-        console.error(`${operation} error:`, error);
-      }
+      logError(`${operation} error:`, error);
     }
   }
 
@@ -115,7 +114,7 @@ export function SyncSettings() {
       downloadJsonFile(data, filename);
       toast.success(t("sync.localBackupSuccess"));
     } catch (error) {
-      console.error(error);
+      logError("Local backup export failed", error);
       toast.error(t("sync.exportFailed"));
     } finally {
       setIsLoading(false);
@@ -139,7 +138,7 @@ export function SyncSettings() {
         setLocalRestoreData(data);
         setIsLocalRestoreDialogOpen(true);
       } catch (error) {
-        console.error(error);
+        logError("Local backup parse failed", error);
         toast.error(t("sync.localRestoreInvalid"));
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -157,7 +156,7 @@ export function SyncSettings() {
       toast.success(t("sync.localRestoreSuccess"));
       setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
-      console.error(error);
+      logError("Local backup restore failed", error);
       toast.error(t("sync.localRestoreFailed"));
     } finally {
       setIsLoading(false);
