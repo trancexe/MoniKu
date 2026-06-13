@@ -24,6 +24,7 @@ export function SyncSettings() {
   const [isLocalRestoreDialogOpen, setIsLocalRestoreDialogOpen] = useState(false);
   const [localRestoreData, setLocalRestoreData] = useState<Record<string, unknown> | null>(null);
   const showIOSPWANotice = useSyncExternalStore(emptySubscribe, () => isIOSPWA(), () => false);
+  const [cookiesBlocked] = useState(() => are3rdPartyCookiesBlocked());
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   const hasClientId = clientId.length > 0;
@@ -184,7 +185,7 @@ export function SyncSettings() {
             </div>
           )}
 
-          {are3rdPartyCookiesBlocked() && (
+          {cookiesBlocked && (
             <div
               role="status"
               aria-live="polite"

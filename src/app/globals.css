@@ -55,32 +55,35 @@
   --card-foreground: oklch(0.141 0.005 285);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285);
-  --primary: oklch(0.45 0.21 280);
+  /* LILA rule: emerald primary (hue 155), chroma 0.14 = 67% saturation (restrained) */
+  --primary: oklch(0.5 0.14 155);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0.01 280);
+  /* Neutrals: pure zinc, no purple tint */
+  --secondary: oklch(0.96 0.005 285);
   --secondary-foreground: oklch(0.141 0.005 285);
-  --muted: oklch(0.96 0.01 280);
-  --muted-foreground: oklch(0.5 0.015 285);
-  --accent: oklch(0.96 0.01 280);
+  --muted: oklch(0.96 0.005 285);
+  --muted-foreground: oklch(0.5 0.01 285);
+  --accent: oklch(0.96 0.005 285);
   --accent-foreground: oklch(0.141 0.005 285);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.01 285);
-  --input: oklch(0.91 0.01 285);
-  --ring: oklch(0.45 0.21 280);
-  --chart-1: oklch(0.55 0.22 280);
-  --chart-2: oklch(0.6 0.18 200);
-  --chart-3: oklch(0.6 0.18 160);
-  --chart-4: oklch(0.55 0.2 35);
-  --chart-5: oklch(0.55 0.22 10);
+  --border: oklch(0.91 0.005 285);
+  --input: oklch(0.91 0.005 285);
+  --ring: oklch(0.5 0.14 155);
+  /* Chart palette: emerald primary, cyan/teal, blue, orange, rose (5 distinct hues) */
+  --chart-1: oklch(0.6 0.15 155);
+  --chart-2: oklch(0.6 0.15 200);
+  --chart-3: oklch(0.6 0.14 230);
+  --chart-4: oklch(0.6 0.17 35);
+  --chart-5: oklch(0.6 0.18 10);
   --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.141 0.005 285);
-  --sidebar-primary: oklch(0.45 0.21 280);
+  --sidebar-primary: oklch(0.5 0.14 155);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.96 0.01 280);
+  --sidebar-accent: oklch(0.96 0.005 285);
   --sidebar-accent-foreground: oklch(0.141 0.005 285);
-  --sidebar-border: oklch(0.91 0.01 285);
-  --sidebar-ring: oklch(0.65 0.15 280);
+  --sidebar-border: oklch(0.91 0.005 285);
+  --sidebar-ring: oklch(0.6 0.12 155);
 }
 
 .dark {
@@ -90,31 +93,34 @@
   --card-foreground: oklch(0.92 0.005 285);
   --popover: oklch(0.185 0.008 285);
   --popover-foreground: oklch(0.92 0.005 285);
-  --primary: oklch(0.65 0.16 280);
+  /* Dark mode: emerald primary, slightly lighter for AA contrast on dark bg */
+  --primary: oklch(0.68 0.13 155);
   --primary-foreground: oklch(0.12 0.008 285);
-  --secondary: oklch(0.22 0.008 285);
+  /* Neutrals: pure zinc */
+  --secondary: oklch(0.22 0.005 285);
   --secondary-foreground: oklch(0.92 0.005 285);
-  --muted: oklch(0.22 0.008 285);
-  --muted-foreground: oklch(0.6 0.008 285);
-  --accent: oklch(0.22 0.008 285);
+  --muted: oklch(0.22 0.005 285);
+  --muted-foreground: oklch(0.6 0.005 285);
+  --accent: oklch(0.22 0.005 285);
   --accent-foreground: oklch(0.92 0.005 285);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.55 0.12 280);
-  --chart-1: oklch(0.6 0.2 280);
-  --chart-2: oklch(0.6 0.16 200);
-  --chart-3: oklch(0.6 0.16 160);
-  --chart-4: oklch(0.55 0.18 35);
-  --chart-5: oklch(0.55 0.2 10);
+  --ring: oklch(0.6 0.11 155);
+  /* Chart palette: dark mode, restrained emerald primary */
+  --chart-1: oklch(0.7 0.14 155);
+  --chart-2: oklch(0.7 0.13 200);
+  --chart-3: oklch(0.7 0.12 230);
+  --chart-4: oklch(0.7 0.15 35);
+  --chart-5: oklch(0.7 0.16 10);
   --sidebar: oklch(0.185 0.008 285);
   --sidebar-foreground: oklch(0.92 0.005 285);
-  --sidebar-primary: oklch(0.65 0.16 280);
+  --sidebar-primary: oklch(0.68 0.13 155);
   --sidebar-primary-foreground: oklch(0.12 0.008 285);
-  --sidebar-accent: oklch(0.22 0.008 285);
+  --sidebar-accent: oklch(0.22 0.005 285);
   --sidebar-accent-foreground: oklch(0.92 0.005 285);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.5 0.1 280);
+  --sidebar-ring: oklch(0.55 0.1 155);
 }
 
 @layer base {

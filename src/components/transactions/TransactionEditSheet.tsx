@@ -272,7 +272,7 @@ export function TransactionEditSheet({
                               {w.name}
                             </span>
                             <span
-                              className={`text-[10px] font-medium text-center line-clamp-1 w-full mt-0.5 ${
+                              className={`text-[10px] font-medium text-center line-clamp-2 w-full mt-0.5 ${
                                 isSelected ? "text-primary/80" : "text-muted-foreground"
                               }`}
                             >
@@ -329,6 +329,8 @@ export function TransactionEditSheet({
                     {t("transaction.amountLabel")}
                   </span>
                   <h2
+                    aria-live="polite"
+                    aria-atomic="true"
                     className={`text-3xl font-bold tracking-tight ${
                       type === "income" ? "text-green-500" : "text-red-500"
                     }`}

@@ -21,12 +21,8 @@ export function BottomNav() {
     { name: t("nav.settings"), href: "/settings", icon: Settings },
   ];
 
-  if (!mounted) {
-    return null; // Prevent Next.js Router action dispatched before initialization error
-  }
-
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+    <div className={`fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none transition-opacity duration-200 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
       <nav className="pointer-events-auto relative flex h-16 w-full max-w-[320px] overflow-hidden items-center justify-around rounded-full border border-black/5 bg-white/80 px-4 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/80">
         {navItems.map((item) => {
           const isActive = pathname === item.href;

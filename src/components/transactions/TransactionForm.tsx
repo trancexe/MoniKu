@@ -199,7 +199,7 @@ export function TransactionForm() {
                     >
                       <Icon className="h-5 w-5 mb-1" />
                       <span className="text-[11px] font-medium text-center line-clamp-2 w-full leading-tight">{w.name}</span>
-                      <span className={`text-[10px] font-medium text-center line-clamp-1 w-full mt-0.5 ${isSelected ? 'text-primary/80' : 'text-muted-foreground'}`}>
+                      <span className={`text-[10px] font-medium text-center line-clamp-2 w-full mt-0.5 ${isSelected ? 'text-primary/80' : 'text-muted-foreground'}`}>
                         {formatCurrencyRaw(w.current_balance)}
                       </span>
                     </button>
@@ -240,7 +240,7 @@ export function TransactionForm() {
           {/* Amount Display */}
           <div className="flex flex-col items-center justify-center pb-4">
             <span className="text-xs font-medium text-muted-foreground mb-1">{t("transaction.amount")}</span>
-            <h2 className={`text-4xl font-bold tracking-tight ${type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+            <h2 aria-live="polite" aria-atomic="true" className={`text-4xl font-bold tracking-tight ${type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
               {formatCurrencyRaw(parseInt(amountStr || "0", 10))}
             </h2>
           </div>
