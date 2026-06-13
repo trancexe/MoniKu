@@ -137,7 +137,7 @@ export function TransactionForm() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto pb-[380px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto pb-[280px] sm:pb-[380px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="space-y-6 p-2">
           {/* Type Toggle */}
           <div role="tablist" className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900 mx-2 mt-2">

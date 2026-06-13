@@ -58,7 +58,7 @@ export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan 
               type="button"
               onClick={handleDelete}
               aria-label={ariaLabelDelete || "Delete"}
-              className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-xl font-medium transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
+              className="flex h-12 sm:h-14 items-center justify-center rounded-xl bg-secondary/50 text-xl font-medium transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
             >
               <Delete className="h-6 w-6" />
             </button>
@@ -70,7 +70,7 @@ export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan 
             type="button"
             onClick={() => handlePress(key)}
             aria-label={labelFor(key)}
-            className="flex h-14 items-center justify-center rounded-xl bg-secondary/50 text-2xl font-semibold transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
+            className="flex h-12 sm:h-14 items-center justify-center rounded-xl bg-secondary/50 text-2xl font-semibold transition-all hover:bg-secondary/70 active:scale-[0.98] active:bg-secondary"
           >
             {key}
           </button>
@@ -79,7 +79,7 @@ export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan 
       <button
         type="button"
         onClick={onSubmit}
-        className="col-span-3 mt-2 flex h-14 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+        className="col-span-3 mt-2 flex h-12 sm:h-14 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
       >
         {submitLabel}
       </button>
