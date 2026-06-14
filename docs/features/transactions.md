@@ -93,7 +93,8 @@ await db.transaction("rw", db.transactions, db.wallets, async () => {
 - Tombol submit di bawah, full-width, primary color
 
 ### Aksesibilitas
-⚠️ **Issue:** tombol numpad tidak punya `aria-label` (lihat [Roadmap](../roadmap.md)). Untuk sementara pakai `title` attribute (TODO).
+- Tombol numpad punya `aria-label` (dipassing `ariaLabelNumber` + `ariaLabelDelete` dari `TransactionForm`) — resolved di iterasi terakhir. Lihat [Roadmap](../roadmap.md).
+- Amount input live region (`aria-live="polite" aria-atomic="true"`) → screen reader announce perubahan amount real-time.
 
 ## Date Handling
 
@@ -135,6 +136,47 @@ Lihat [Conventions](../conventions.md#url-state-pattern) untuk detail pola `useS
 - **No transactions at all**: card dengan icon Receipt + "Belum ada transaksi" + "Mulai catat transaksi keuangan Anda"
 - **No transactions matching filter**: card sama tapi text berbeda (`"Belum ada {type}"`)
 - **Has transactions**: grouped list
+
+## Dynamic Bottom Padding (Numpad Clearance)
+
+`TransactionForm` punya numpad yang `position: fixed` di bagian bawah (di atas BottomNav). Form scrollable harus punya bottom padding yang cukup supaya field terakhir (catatan) tidak tertutup numpad.
+
+Sebelumnya: hardcoded `pb-[280px] sm:pb-[380px]` — fragile across viewports. Poco F6 (20:9 aspect ratio + browser chrome) punya viewport tinggi efektif ~700-750px, numpad occupy ~317px dari `bottom-24` (96px), jadi butuh padding ~413px. `pb-[280px]` short 133px → notes input terpotong.
+
+Fix (resolved): dynamic measurement dengan `useLayoutEffect` + `ResizeObserver`:
+
+```typescript
+// TransactionForm.tsx:14-52
+const numpadRef = useRef<HTMLDivElement>(null);
+const [scrollPaddingBottom, setScrollPaddingBottom] = useState(380);
+
+useLayoutEffect(() => {
+  const el = numpadRef.current;
+  if (!el) return;
+  const measure = () => {
+    const rect = el.getBoundingClientRect();
+    setScrollPaddingBottom(window.innerHeight - rect.top + 16);
+  };
+  measure();
+  const observer = new ResizeObserver(measure);
+  observer.observe(el);
+  window.addEventListener("resize", measure);
+  return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+}, []);
+
+// ...
+<div
+  className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+  style={{ paddingBottom: scrollPaddingBottom }}
+>
+  {/* form content */}
+</div>
+<div ref={numpadRef} className="fixed bottom-24 ...">
+  {/* numpad */}
+</div>
+```
+
+`useLayoutEffect` (bukan `useEffect`) — measurement jalan sebelum paint, no flash. Re-measure otomatis saat: numpad size berubah (jumlah text wrap, locale button text berbeda), viewport resize (rotasi, browser chrome, soft keyboard). Initial fallback 380px (sama dengan old `sm:pb-[380px]` value) untuk SSR + first paint.
 
 ## Alur Edit
 

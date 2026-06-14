@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { CustomNumpad } from "./CustomNumpad";
@@ -14,6 +14,47 @@ import { useT, useFormatLocale } from "@/lib/i18n";
 export function TransactionForm() {
   const t = useT();
   const { formatCurrencyRaw } = useFormatLocale();
+
+  // --- Dynamic bottom padding for the scrollable form ---
+  // The numpad is `position: fixed` (sits above the BottomNav), so it overlays
+  // the form's content area. The scrollable must have enough bottom padding
+  // to keep the last field (notes) reachable above the numpad. Hardcoded
+  // values were fragile across viewports — the Poco F6 (and other phones
+  // with 20:9 aspect ratio + browser chrome) would clip the notes input
+  // under the numpad (~133px short). We measure the numpad at runtime and
+  // expose the result as inline `paddingBottom` on the scrollable.
+  const numpadRef = useRef<HTMLDivElement>(null);
+  // Initial fallback: roughly the previous `sm:pb-[380px]` value. Overwritten
+  // synchronously by the useLayoutEffect below on first paint.
+  const [scrollPaddingBottom, setScrollPaddingBottom] = useState(380);
+
+  useLayoutEffect(() => {
+    const el = numpadRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      // Distance from viewport bottom to the top of the numpad, plus a small
+      // visual breathing room. `rect.top` is the numpad's top edge in
+      // viewport coordinates; viewport height minus that = how much of the
+      // viewport the numpad + its bottom offset consume.
+      const viewportHeight = window.innerHeight;
+      setScrollPaddingBottom(viewportHeight - rect.top + 16);
+    };
+
+    measure();
+
+    // Re-measure when numpad size changes (e.g. amount section wraps,
+    // locale changes button text) and on viewport resize (rotation,
+    // browser chrome show/hide, soft keyboard).
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
 
   const makeSchema = () => z.object({
     amount: z.number().positive(t("validation.amountPositive")).max(1000000000000, t("validation.amountMax")),
@@ -137,7 +178,10 @@ export function TransactionForm() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto pb-[280px] sm:pb-[380px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ paddingBottom: scrollPaddingBottom }}
+      >
         <div className="space-y-6 p-2">
           {/* Type Toggle */}
           <div role="tablist" className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900 mx-2 mt-2">
@@ -235,7 +279,10 @@ export function TransactionForm() {
       </div>
 
       {/* Fixed numpad section - stays above bottom nav */}
-      <div className="fixed bottom-24 left-0 right-0 z-40 md:max-w-md md:mx-auto">
+      <div
+        ref={numpadRef}
+        className="fixed bottom-24 left-0 right-0 z-40 md:max-w-md md:mx-auto"
+      >
         <div className="border-t pt-2 pb-2 bg-background px-4">
           {/* Amount Display */}
           <div className="flex flex-col items-center justify-center pb-4">

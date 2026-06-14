@@ -22,14 +22,16 @@ Status proyek, known issues, dan fitur yang direncanakan. Terorganisir per kateg
 ### Pola / Infrastructure
 - [x] **`useWalletFilter` hook** (`src/lib/hooks/useWalletFilter.ts`) — single source of truth untuk URL wallet filter
 - [x] **Suspense boundary** di `src/app/page.tsx` dan `src/app/transactions/history/page.tsx` untuk `useSearchParams` di static export
+- [x] **Dynamic bottom padding** di TransactionForm — `useLayoutEffect` + `ResizeObserver` ukur numpad height, set `paddingBottom` di scrollable. Fix Poco F6 + device lain dengan aspect ratio panjang / browser chrome yang sebelumnya nge-clip notes input di bawah numpad
 - [x] **i18n key parity check** — `id.json` dan `en.json` synchronized
+- [x] **Numpad a11y** — `aria-label` per digit button + delete button (was: TODO)
 
 ### Aksesibilitas
 - [x] Ganti `<a href>` ke `<Link>` Next.js di Quick Actions (dashboard)
 - [x] Ganti `<article onClick>` ke `<button>` di transaction row (dashboard + history)
 - [x] `aria-pressed` di hide-balance toggle
 - [x] `role="tablist"` + `aria-selected` di wallet card/chip selector
-- [x] Skip link + `aria-label` patterns (lihat [Conventions](conventions.md))
+- [x] Numpad buttons punya `aria-label` (i18n-aware)
 
 ## 🚨 Blocker sebelumnya (resolved)
 
@@ -68,7 +70,7 @@ Status proyek, known issues, dan fitur yang direncanakan. Terorganisir per kateg
 - [ ] Tambah PWA install prompt UI (saat ini pakai browser default)
 
 ### Code Smell
-- [ ] Magic number `pb-[380px]` di TransactionForm.tsx:101 — pakai dynamic measure
+- [ ] ~~Magic number `pb-[380px]` di TransactionForm.tsx:101 — pakai dynamic measure~~ → **RESOLVED**. Pakai `useLayoutEffect` + `ResizeObserver` untuk ukur numpad height runtime. Lihat [Transactions](features/transactions.md#dynamic-bottom-padding-numpad-clearance).
 - [ ] `<input type="number">` di DebtForm.tsx:69 — ganti ke `inputMode="numeric"`
 - [ ] Tambah undo untuk destructive actions (delete transaction, restore)
 - [ ] System category literal `"system-repayment"` di DebtList.tsx:33 — refactor ke proper entity
