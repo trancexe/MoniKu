@@ -17,17 +17,17 @@ MoniKu punya 6 halaman utama. Masing-masing punya halaman wiki detail di folder 
 ## Ringkasan
 
 ### Dashboard
-Landing page. Menampilkan total saldo (jumlah semua `wallets.current_balance`), 10 transaksi terakhir, dan 2 quick action card. Loading skeleton saat data belum ready.
+Landing page. Menampilkan **Total Balance Card** (aggregate, atau saldo wallet tunggal saat filter aktif), **Wallet Card Selector** (horizontal scroll, tap = filter), **Hide Balance toggle** (👁 di pojok kanan-atas Total Balance Card — propagasi ke transaction row amount + wallet card balances), 2 quick action card, dan 5 transaksi terakhir (filtered by selected wallet kalau ada). URL `?wallet=<id>` adalah source of truth untuk filter, sehingga shareable & back/forward akurat.
 
 📄 [Detail →](dashboard.md)
 
 ### Transaksi (Create)
-Form input dengan custom numpad. Pilih kategori dan dompet via grid picker. Validasi: amount > 0, wallet & category wajib dipilih. Submit melakukan atomic `db.transaction` yang insert transaksi + update saldo wallet.
+Form input dengan custom numpad. Pilih kategori dan dompet via grid picker. Validasi pakai **zod schema** dengan pesan error i18n: amount > 0, max 1 Triliun, wallet & category wajib dipilih. Submit melakukan atomic `db.transaction` yang insert transaksi + update saldo wallet.
 
 📄 [Detail →](transactions.md)
 
 ### Riwayat Transaksi
-List transaksi dikelompokkan per hari dengan header "Hari Ini" / "Kemarin" / "Senin, 12 Juni 2026". Filter tab (Semua / Pemasukan / Pengeluaran). Daily totals di header. Click row → buka edit sheet.
+List transaksi dikelompokkan per hari dengan header "Hari Ini" / "Kemarin" / "Senin, 12 Juni 2026". Dua filter yang bisa di-stack: **Type filter** (Semua / Pemasukan / Pengeluaran) via `useState` lokal + **Wallet filter** (URL `?wallet=<id>` via `useWalletFilter()` hook). Daily totals di header. Click row → buka edit sheet.
 
 📄 [Detail →](transactions.md)
 
@@ -66,9 +66,12 @@ Empat section:
 - **Toaster** (sonner) global, muncul top-center
 - **AppInit** jalan sekali saat mount: seed database (jika kosong) + unregister SW (workaround)
 - **Live queries** (`useLiveQuery`) bikin semua list otomatis update saat data berubah
+- **URL state** (`?wallet=<id>`) driving wallet filter di home + history, via `useWalletFilter()` hook
+- **Suspense boundaries** di `page.tsx` yang konsumsi `useSearchParams` (diperlukan untuk static export)
+- **i18n** via `useT()` dari `LocaleProvider`, messages di `src/lib/i18n/locales/{id,en}.json`
 
 ## Lihat juga
-
 - [Data Model](../data-model.md) — entity & relasi
-- [Architecture](../architecture.md) — provider tree, data flow
-- [Roadmap](../roadmap.md) — fitur yang akan datang
+- [Architecture](../architecture.md) — provider tree, data flow, URL-state & hide-mode patterns
+- [Conventions](../conventions.md) — zod validation, code style
+- [Roadmap](../roadmap.md) — fitur yang akan datang & recently-shipped

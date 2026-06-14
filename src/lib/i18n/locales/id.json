@@ -28,7 +28,11 @@
     "recentTransactions": "Transaksi Terakhir",
     "viewAll": "Lihat Semua",
     "emptyTitle": "Belum ada transaksi",
-    "emptyDesc": "Mulai catat pengeluaran atau pemasukan Anda"
+    "emptyDesc": "Mulai catat pengeluaran atau pemasukan Anda",
+    "hideBalance": "Sembunyikan saldo",
+    "showBalance": "Tampilkan saldo",
+    "balanceHidden": "Rp •••••••",
+    "allWallets": "Semua"
   },
   "transaction": {
     "pageTitle": "Catat Transaksi",
@@ -68,7 +72,10 @@
     "emptyFiltered": "Belum ada {type}",
     "emptyAll": "Belum ada transaksi",
     "emptyDescHistory": "Mulai catat transaksi keuangan Anda",
-    "categoryOther": "Lainnya"
+    "categoryOther": "Lainnya",
+    "allWallets": "Semua dompet",
+    "walletFilter": "Filter dompet",
+    "walletFilterClear": "Hapus filter dompet"
   },
   "numpad": {
     "submit": "Simpan Transaksi",

@@ -111,6 +111,109 @@ if (!wallets) return <Skeleton />;
 
 **Jangan** pakai `useState` untuk data yang bisa di-query dari DB.
 
+### URL-State Pattern
+
+Untuk filter yang ingin **shareable / bookmarkable / cross-page propagatable** (mis. wallet filter `?wallet=<id>`), pakai URL sebagai source of truth, bukan `useState`. Pola di-extract ke custom hook:
+
+```typescript
+// src/lib/hooks/useWalletFilter.ts
+export function useWalletFilter() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedWalletId = searchParams.get("wallet");
+
+  const setWalletFilter = useCallback(
+    (walletId: string | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (walletId) params.set("wallet", walletId);
+      else params.delete("wallet");
+      const qs = params.toString();
+      const path = typeof window !== "undefined" ? window.location.pathname : "/";
+      router.replace(qs ? `${path}?${qs}` : path, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  // Stale-id handling: if URL points to deleted wallet, treat as unselected
+  const effectiveWalletId = useMemo(
+    () => (selectedWalletId && wallets.find(w => w.id === selectedWalletId)?.id) || null,
+    [selectedWalletId, wallets]
+  );
+
+  return { selectedWalletId, effectiveWalletId, setWalletFilter, ... };
+}
+```
+
+**Wajib**: page yang konsumsi hook **harus** dibungkus `<Suspense fallback={null}>` di `page.tsx`. Tanpa itu, build `output: "export"` akan error: *"useSearchParams should be wrapped in a suspense boundary"*.
+
+Trade-off URL state vs useState:
+
+| | URL state | useState |
+|--|-----------|----------|
+| Shareable URL | ✅ | ❌ |
+| Bookmark | ✅ | ❌ |
+| Browser back/forward | ✅ | ❌ |
+| Cross-page propagation | ✅ (via link) | ❌ (state reset) |
+| Session-only ephemeral | ❌ (persists in URL) | ✅ |
+
+Pakai `useState` kalau state benar-benar session-local dan tidak perlu di-share (mis. modal open/close, form input values).
+
+### Hide-Mode Pattern (Persistent UI State)
+
+Untuk UI state yang **per-user** (bukan per-route) dan harus persistif across reload, pakai `useSyncExternalStore` + `localStorage`. Contoh: hide balance toggle di dashboard.
+
+```typescript
+// Pattern (inline, tidak perlu hook terpisah kalau hanya dipakai 1 tempat)
+const HIDE_KEY = "moniku-hideBalance";
+
+function readSnapshot(): boolean {
+  if (typeof window === "undefined") return false;  // SSR
+  try { return localStorage.getItem(HIDE_KEY) === "1"; } catch { return false; }
+}
+function getServerSnapshot(): boolean { return false; }  // also SSR
+
+function subscribe(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = (e: StorageEvent) => { if (e.key === HIDE_KEY) callback(); };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
+}
+
+function setHidden(hidden: boolean) {
+  try { hidden ? localStorage.setItem(HIDE_KEY, "1") : localStorage.removeItem(HIDE_KEY); } catch {}
+  if (typeof window !== "undefined") {
+    // Native 'storage' event ONLY fires cross-tab. Manual dispatch untuk same-tab.
+    window.dispatchEvent(new StorageEvent("storage", { key: HIDE_KEY, newValue: hidden ? "1" : null }));
+  }
+}
+
+const isHidden = useSyncExternalStore(subscribe, readSnapshot, getServerSnapshot);
+```
+
+Mengapa `useSyncExternalStore` (bukan `useState` + `useEffect`):
+- **SSR-safe**: `getServerSnapshot` untuk server render
+- **Cross-tab sync otomatis**: native `storage` event listener
+- **Same-tab sync**: manual dispatch di setter
+- **Hindari `set-state-in-effect` lint violation** (yang menumpuk di analytics & history)
+
+Kalau dipakai di >1 component, extract ke custom hook di `src/lib/hooks/`. Kalau hanya 1 tempat, inline OK.
+
+### Validation
+
+Form pakai **zod schema** dengan pesan error yang sudah di-i18n. Pattern:
+
+```typescript
+const schema = z.object({
+  amount: z.number().positive(t("validation.amountPositive")).max(1e12, t("validation.amountMax")),
+  notes: z.string().max(100, t("validation.notesMax")).optional(),
+});
+
+const parsed = schema.safeParse({ amount: rawAmount, notes });
+if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+```
+
+i18n keys di namespace `validation.*` (`id.json` + `en.json` disinkronkan).
+
 **Dependencies yang terpasang tapi belum dipakai:**
 - `zustand` — di-declare di package.json tapi tidak ada usage. Akan dicabut kalau tidak dipakai. Lihat [Roadmap](roadmap.md).
 - `fflate` — sama, untuk kompresi. Mungkin berguna untuk backup format di masa depan.

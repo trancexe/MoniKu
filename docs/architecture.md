@@ -84,8 +84,18 @@ src/lib/
 ├── db.ts              # Dexie instance + schema + types
 ├── gdrive.ts          # Google Drive upload/download
 ├── seed.ts            # Initial data
-└── utils.ts           # cn() helper (clsx + tailwind-merge)
+├── utils.ts           # cn() helper (clsx + tailwind-merge)
+├── hooks/             # Custom React hooks
+│   └── useWalletFilter.ts   # URL ?wallet=<id> source of truth
+└── i18n/              # LocaleProvider + locales/{id,en}.json
+    ├── LocaleProvider.tsx
+    ├── config.ts
+    └── locales/
+        ├── id.json
+        └── en.json
 ```
+
+Library sengaja tipis — business logic tetap dekat dengan component. Hooks masuk `lib/hooks/`, i18n masuk `lib/i18n/` (sub-module karena multi-file). Lihat [Conventions](conventions.md) untuk kapan extract ke `lib/` vs inline.
 
 ## Provider Tree
 
@@ -104,10 +114,12 @@ Root layout (`src/app/layout.tsx`) menyusun provider hierarkis:
 ```
 
 Catatan:
-- `lang="en"` saat ini salah — UI 100% Indonesia. Akan difix ke `lang="id"` (lihat [Roadmap](roadmap.md))
+- `lang="en"` di JSX static masih salah — UI 100% Indonesia. `LocaleProvider` runtime-set `document.documentElement.lang = locale` di `useEffect`, tapi initial SSR HTML masih render `en`. Lihat [Roadmap](roadmap.md) untuk fix
 - `suppressHydrationWarning` karena next-themes memodifikasi `<html>` saat SSR
 - Toaster di luar mobile frame supaya toast tidak tertutup container
 - ThemeProvider di paling luar agar OAuth & AppInit bisa baca tema
+- LocaleProvider di antara ThemeProvider dan GoogleOAuthProvider agar `useT()` tersedia di seluruh tree (termasuk OAuth flow)
+- Page yang pakai `useSearchParams` (`/`, `/transactions/history`) dibungkus `<Suspense>` di `page.tsx`-nya masing-masing — required oleh static export agar build tidak error
 
 ## Data Flow
 
@@ -115,12 +127,41 @@ Catatan:
 Komponen tidak pegang state lokal untuk data dari DB. Pakai `useLiveQuery` dari `dexie-react-hooks`:
 
 ```typescript
-// transactions/page.tsx
 const wallets = useLiveQuery(() => db.wallets.toArray());
 // → re-render otomatis saat tabel wallets berubah
 ```
 
 Tidak ada Redux, Zustand (meskipun dependency terpasang), atau context untuk data domain. Dexie adalah single source of truth.
+
+### URL State (Filter Shareable)
+Untuk filter yang ingin di-share atau di-bookmark (mis. wallet filter `?wallet=<id>`), pakai URL sebagai source of truth, bukan `useState` lokal. Pola:
+
+```typescript
+// src/lib/hooks/useWalletFilter.ts
+export function useWalletFilter() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedWalletId = searchParams.get("wallet");
+  // ...resolve, setWalletFilter (router.replace)
+  return { selectedWalletId, effectiveWalletId, setWalletFilter, ... };
+}
+```
+
+Page yang konsumsi hook **harus** dibungkus `<Suspense>` di `page.tsx` (lihat "Provider Tree" catatan di atas). Lihat [Conventions](conventions.md#url-state-pattern) untuk detail lengkap + trade-off.
+
+### Persistent UI State (Hide Mode, dll.)
+Untuk UI state yang **per-user** (bukan per-route) dan harus persistif across reload, pakai `useSyncExternalStore` + `localStorage`. Contoh: hide balance toggle.
+
+```typescript
+// inline di DashboardOverview.tsx
+const isBalanceHidden = useSyncExternalStore(
+  subscribeToHideBalance,        // listen 'storage' event
+  readHideBalanceSnapshot,      // localStorage.getItem("moniku-hideBalance") === "1"
+  () => false                   // SSR snapshot
+);
+```
+
+Pola ini SSR-safe (return `false` di server), cross-tab sync (via native `storage` event), dan same-tab sync (manual `dispatchEvent(new StorageEvent(...))` di setter). Lihat [Conventions](conventions.md#hide-mode-pattern) untuk detail.
 
 ### Form State
 Form pakai React `useState`. Submit handler melakukan `db.transaction('rw', ...)` yang membungkus beberapa operasi DB jadi atomic:

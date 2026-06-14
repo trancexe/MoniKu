@@ -1,30 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction } from "@/lib/db";
 import * as Icons from "lucide-react";
 import dayjs from "dayjs";
 import { RevealStagger } from "@/components/ui/RevealStagger";
 import { TransactionEditSheet } from "@/components/transactions/TransactionEditSheet";
+import { WalletCard } from "@/components/ui/WalletCard";
 import Link from "next/link";
 import { useT, useFormatLocale } from "@/lib/i18n";
+import { WALLET_QUERY_PARAM, useWalletFilter } from "@/lib/hooks/useWalletFilter";
+
+const HIDE_BALANCE_KEY = "moniku-hideBalance";
+const HOME_TX_LIMIT = 5;
+
+// --- Hide balance (persistent via localStorage) ---
+function readHideBalanceSnapshot(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(HIDE_BALANCE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function getServerHideBalanceSnapshot(): boolean {
+  return false;
+}
+function subscribeToHideBalance(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = (e: StorageEvent) => {
+    if (e.key === HIDE_BALANCE_KEY) callback();
+  };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
+}
+function setHideBalance(hidden: boolean) {
+  try {
+    if (hidden) {
+      localStorage.setItem(HIDE_BALANCE_KEY, "1");
+    } else {
+      localStorage.removeItem(HIDE_BALANCE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+  if (typeof window !== "undefined") {
+    // The native `storage` event only fires across tabs/windows, not in the
+    // tab that did the write. Dispatch a synthetic event so the local
+    // useSyncExternalStore subscriber re-reads the snapshot in this tab.
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: HIDE_BALANCE_KEY, newValue: hidden ? "1" : null })
+    );
+  }
+}
 
 export function DashboardOverview() {
   const t = useT();
   const { formatCurrency } = useFormatLocale();
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const wallets = useLiveQuery(() => db.wallets.toArray());
-  const transactions = useLiveQuery(() =>
-    db.transactions.orderBy('date').reverse().limit(10).toArray()
+  const isBalanceHidden = useSyncExternalStore(
+    subscribeToHideBalance,
+    readHideBalanceSnapshot,
+    getServerHideBalanceSnapshot
+  );
+
+  const {
+    effectiveWalletId,
+    selectedWallet: activeWallet,
+    wallets,
+    isLoading: walletsLoading,
+    selectedWalletId,
+    setWalletFilter,
+  } = useWalletFilter();
+
+  // Wallet-aware query: when a wallet is selected, fetch all of its
+  // transactions, sort by date, take the latest 5. The naive global
+  // `.limit(5)` would silently truncate wallets with few recent entries
+  // (see QA report D1). Performance acceptable at personal-finance scale
+  // (hundreds of tx per wallet); add a compound `[wallet_id+date]` index
+  // in a future schema migration if this ever becomes a hotspot.
+  const transactions = useLiveQuery(
+    async () => {
+      if (selectedWalletId) {
+        const all = await db.transactions
+          .where("wallet_id")
+          .equals(selectedWalletId)
+          .toArray();
+        return all
+          .sort((a, b) => b.date - a.date)
+          .slice(0, HOME_TX_LIMIT);
+      }
+      return db.transactions
+        .orderBy("date")
+        .reverse()
+        .limit(HOME_TX_LIMIT)
+        .toArray();
+    },
+    [selectedWalletId]
   );
   const categories = useLiveQuery(() => db.categories.toArray());
 
-  const isLoading = !wallets || !transactions || !categories;
-  const totalBalance = wallets?.reduce((acc, wallet) => acc + wallet.current_balance, 0) || 0;
+  const isLoading = walletsLoading || !transactions || !categories;
 
-  const getCategory = (id: string) => categories?.find(c => c.id === id);
+  const displayedBalance = effectiveWalletId
+    ? activeWallet?.current_balance ?? 0
+    : wallets.reduce((acc, wallet) => acc + wallet.current_balance, 0);
+
+  const balanceLabel = effectiveWalletId ? activeWallet?.name ?? "" : t("dashboard.totalBalance");
+
+  const getCategory = (id: string) => (categories ?? []).find((c) => c.id === id);
+
+  const viewAllHref = effectiveWalletId
+    ? `/transactions/history?${WALLET_QUERY_PARAM}=${effectiveWalletId}`
+    : "/transactions/history";
 
   if (isLoading) {
     return (
@@ -62,11 +152,67 @@ export function DashboardOverview() {
       <section className="relative overflow-hidden rounded-2xl bg-zinc-950 p-6 text-zinc-50 shadow-xl shadow-black/10 dark:bg-zinc-900 dark:border dark:border-zinc-800">
         <div className="absolute inset-0 border-[1px] border-white/10 rounded-2xl pointer-events-none" />
         <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] rounded-2xl pointer-events-none" />
-        <p className="text-sm font-medium text-zinc-400">{t("dashboard.totalBalance")}</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-medium text-zinc-400">{balanceLabel}</p>
+          <button
+            type="button"
+            onClick={() => setHideBalance(!isBalanceHidden)}
+            aria-label={
+              isBalanceHidden ? t("dashboard.showBalance") : t("dashboard.hideBalance")
+            }
+            aria-pressed={isBalanceHidden}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-zinc-50 active:scale-95"
+          >
+            {isBalanceHidden ? (
+              <Icons.EyeOff className="h-4 w-4" />
+            ) : (
+              <Icons.Eye className="h-4 w-4" />
+            )}
+          </button>
+        </div>
         <h2 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight tabular-nums">
-          {formatCurrency(totalBalance)}
+          {isBalanceHidden
+            ? t("dashboard.balanceHidden")
+            : formatCurrency(displayedBalance)}
         </h2>
       </section>
+
+      {/* Wallet Card Selector — each card shows its own balance, tap to filter */}
+      {wallets.length > 0 && (
+        <section aria-label={t("transaction.walletFilter")}>
+          <div
+            role="tablist"
+            className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden"
+          >
+            {wallets.map((wallet) => {
+              const WalletIcon = (Icons[
+                wallet.icon as keyof typeof Icons
+              ] ?? Icons.Wallet) as React.ElementType;
+              return (
+                <WalletCard
+                  key={wallet.id}
+                  label={wallet.name}
+                  // Hide per-card balance when the user toggled hide-balance,
+                  // so the privacy intent covers every visible number on the
+                  // home page (Total Balance Card + transaction row + cards).
+                  amount={
+                    isBalanceHidden
+                      ? t("dashboard.balanceHidden")
+                      : formatCurrency(wallet.current_balance)
+                  }
+                  icon={WalletIcon}
+                  active={effectiveWalletId === wallet.id}
+                  onClick={() =>
+                    setWalletFilter(
+                      effectiveWalletId === wallet.id ? null : wallet.id
+                    )
+                  }
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Quick Action */}
       <section aria-label={t("dashboard.quickActions")} className="grid grid-cols-2 gap-3">
@@ -89,7 +235,7 @@ export function DashboardOverview() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-base sm:text-lg">{t("dashboard.recentTransactions")}</h3>
           {transactions.length > 0 && (
-            <Link href="/transactions/history" className="text-sm font-medium text-primary hover:underline transition">
+            <Link href={viewAllHref} className="text-sm font-medium text-primary hover:underline transition">
               {t("dashboard.viewAll")}
             </Link>
           )}
@@ -115,7 +261,7 @@ export function DashboardOverview() {
             </div>
           ) : (
             <RevealStagger className="space-y-2.5">
-              {transactions.map(trx => {
+              {transactions.map((trx) => {
                 const category = getCategory(trx.category_id);
                 const Icon = (category?.icon ? Icons[category.icon as keyof typeof Icons] : Icons.CircleDollarSign) as React.ElementType;
                 const isIncome = trx.type === 'income';
@@ -145,7 +291,9 @@ export function DashboardOverview() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className={`shrink-0 font-medium tabular-nums text-sm sm:text-base ${isIncome ? 'text-green-600 dark:text-green-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                        {isIncome ? '+' : '-'}{formatCurrency(trx.amount)}
+                        {isBalanceHidden
+                          ? "•••"
+                          : `${isIncome ? '+' : '-'}${formatCurrency(trx.amount)}`}
                       </div>
                       <Icons.ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                     </div>

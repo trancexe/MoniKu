@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { TransactionHistory } from "@/components/transactions/TransactionHistory";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
@@ -24,7 +25,9 @@ export default function TransactionHistoryPage() {
         </div>
       </header>
       <div className="flex-1 min-h-0 pb-8">
-        <TransactionHistory />
+        <Suspense fallback={null}>
+          <TransactionHistory />
+        </Suspense>
       </div>
     </div>
   );

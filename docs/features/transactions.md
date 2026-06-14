@@ -23,18 +23,31 @@ Fitur inti MoniKu: mencatat, menampilkan, mengedit, dan menghapus transaksi.
 7. Tap tombol angka di numpad untuk isi nominal
 8. Tap **Simpan Transaksi**
 
-### Validasi (di `TransactionForm.tsx:27-31`)
+### Validasi (di `TransactionForm.tsx:86-94`)
+
+Validasi pakai **zod schema** dengan pesan error yang sudah di-i18n:
+
 ```typescript
-if (amount <= 0) return toast.error("Masukkan nominal yang valid");
-if (!walletId) return toast.error("Pilih dompet");
-if (!categoryId) return toast.error("Pilih kategori");
+const transactionSchema = z.object({
+  amount: z.number().positive(t("validation.amountPositive")).max(1000000000000, t("validation.amountMax")),
+  notes: z.string().max(100, t("validation.notesMax")).optional(),
+});
+
+const parsed = transactionSchema.safeParse({ amount: rawAmount, notes });
+if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+
+if (!walletId) return toast.error(t("transaction.selectWallet"));
+if (!categoryId) return toast.error(t("transaction.selectCategory"));
 ```
 
-### Atomic Balance Update (di `TransactionForm.tsx:35-60`)
+Pesan error pakai i18n key di `validation.*` (id/en disinkronkan). `z.number().max(1e12)` = batas atas 1 Triliun untuk cegah input absurd. Lihat [Conventions](../conventions.md#validation) untuk pola zod + i18n.
+
+### Atomic Balance Update (di `TransactionForm.tsx:42-67`)
+
 ```typescript
-await db.transaction('rw', db.transactions, db.wallets, async () => {
-  const wallet = await db.wallets.get(walletId);
-  if (!wallet) throw new Error("Wallet not found");
+await db.transaction("rw", db.transactions, db.wallets, async () => {
+  const currentWallet = await db.wallets.get(walletId);
+  if (!currentWallet) throw new Error("Wallet not found");
 
   await db.transactions.add({
     id: crypto.randomUUID(),
@@ -43,13 +56,13 @@ await db.transaction('rw', db.transactions, db.wallets, async () => {
     type,
     amount,
     date: new Date(transactionDate).getTime(),
-    notes,
-    sync_status: 'pending',
+    notes: parsedNotes || "",
+    sync_status: "pending",
   });
 
-  const newBalance = type === 'income'
-    ? wallet.current_balance + amount
-    : wallet.current_balance - amount;
+  const newBalance = type === "income"
+    ? currentWallet.current_balance + amount
+    : currentWallet.current_balance - amount;
 
   await db.wallets.update(walletId, {
     current_balance: newBalance,
@@ -97,16 +110,30 @@ Trik `getTimezoneOffset` menggeser ke UTC, lalu `toISOString().slice(0,16)` dapa
 
 ## Alur History
 
-`/transactions/history` menampilkan semua transaksi, dikelompokkan per hari:
+`/transactions/history` menampilkan semua transaksi, dikelompokkan per hari. Komponen `TransactionHistory` dibungkus `<Suspense>` di `src/app/transactions/history/page.tsx` (diperlukan untuk `useSearchParams` di static export).
 
 1. Query: `db.transactions.orderBy('date').reverse().toArray()` — urut terbaru dulu
 2. Group: `reduce` jadi `[{label, date, items}]`. Label = `"Hari Ini"` / `"Kemarin"` / `"dddd, D MMMM YYYY"` (format dayjs locale `id`)
 3. Hitung daily totals (income & expense) per group, tampilkan di header group
-4. Filter via tab: `"all" | "income" | "expense"` (`.filter` di array, bukan query ulang)
+4. Filter via state `useState` (session-only) **+** via URL `?wallet=<id>` (shareable):
+   - **Type filter** (`all` | `income` | `expense`): chip tab di atas
+   - **Wallet filter**: chip selector di atas (sumber: URL `?wallet=<id>` via `useWalletFilter()` hook). Jika URL punya wallet id, transaksi di-filter AND dengan type filter.
+5. Empty state beda: filter mismatch vs no transactions at all
+
+### Filter Wallet
+
+URL-driven (`?wallet=<id>`), bukan session state. Alasan:
+- **Shareable**: paste URL `?wallet=<id>` ke orang lain / bookmark → langsung ke filtered view
+- **Cross-page**: home filter ter-propagasi ke history via "Lihat Semua" link
+- **Browser back/forward** akurat
+
+Dipakai di home dashboard juga (`/`) dengan hook yang sama (`src/lib/hooks/useWalletFilter.ts`). Stale id (wallet dihapus) ter-resolve ke `null` di `effectiveWalletId` — handled gracefully.
+
+Lihat [Conventions](../conventions.md#url-state-pattern) untuk detail pola `useSearchParams` + `useRouter().replace()` + Suspense.
 
 ### Empty States
 - **No transactions at all**: card dengan icon Receipt + "Belum ada transaksi" + "Mulai catat transaksi keuangan Anda"
-- **No transactions matching filter**: card sama tapi text berbeda (`"Belum ada pemasukan"` / `"pengeluaran"`)
+- **No transactions matching filter**: card sama tapi text berbeda (`"Belum ada {type}"`)
 - **Has transactions**: grouped list
 
 ## Alur Edit
@@ -173,7 +200,9 @@ Field `sync_status: 'synced' | 'pending'` saat ini **selalu diset `'pending'`** 
 - Wallet balance bisa negatif tanpa warning
 
 ## Lihat juga
-
+## Lihat juga
 - [Data Model](../data-model.md) — Transaction entity
+- [Dashboard](dashboard.md) — recent transactions (limit 5) + wallet filter source
 - [Debts](debts.md) — pattern repayment yang reuse field `category_id = "system-repayment"`
+- [Conventions](../conventions.md) — URL-state pattern, zod validation
 - [Roadmap](../roadmap.md) — planned improvements

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction } from "@/lib/db";
 import * as Icons from "lucide-react";
@@ -9,8 +9,10 @@ import "dayjs/locale/id";
 import isToday from "dayjs/plugin/isToday";
 import isYesterday from "dayjs/plugin/isYesterday";
 import { RevealStagger } from "@/components/ui/RevealStagger";
+import { WalletChip } from "@/components/ui/WalletChip";
 import { TransactionEditSheet } from "./TransactionEditSheet";
 import { useT, useFormatLocale } from "@/lib/i18n";
+import { useWalletFilter } from "@/lib/hooks/useWalletFilter";
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
@@ -24,42 +26,54 @@ export function TransactionHistory() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
+  const { effectiveWalletId, wallets, isLoading: walletsLoading, setWalletFilter } =
+    useWalletFilter();
+
   const allTransactions = useLiveQuery(
     () => db.transactions.orderBy("date").reverse().toArray()
   );
   const categories = useLiveQuery(() => db.categories.toArray());
 
-  const isLoading = !allTransactions || !categories;
+  const isLoading = walletsLoading || !allTransactions || !categories;
 
-  const transactions = allTransactions?.filter((t) =>
-    filter === "all" ? true : t.type === filter
-  );
+  const transactions = useMemo(() => {
+    return (allTransactions ?? []).filter((trx) => {
+      if (effectiveWalletId && trx.wallet_id !== effectiveWalletId) return false;
+      if (filter !== "all" && trx.type !== filter) return false;
+      return true;
+    });
+  }, [allTransactions, effectiveWalletId, filter]);
 
-  const getCategory = (id: string) => categories?.find((c) => c.id === id);
+  const getCategory = (id: string) => (categories ?? []).find((c) => c.id === id);
 
   // Group transactions by date
-  const groupedTransactions = transactions?.reduce<
-    { label: string; date: string; items: Transaction[] }[]
-  >((groups, trx) => {
-    const d = dayjs(trx.date);
-    let label: string;
-    if (d.isToday()) {
-      label = t("transaction.today");
-    } else if (d.isYesterday()) {
-      label = t("transaction.yesterday");
-    } else {
-      label = d.format("dddd, D MMMM YYYY");
-    }
-    const dateKey = d.format("YYYY-MM-DD");
+  const groupedTransactions = useMemo(
+    () =>
+      transactions.reduce<{ label: string; date: string; items: Transaction[] }[]>(
+        (groups, trx) => {
+          const d = dayjs(trx.date);
+          let label: string;
+          if (d.isToday()) {
+            label = t("transaction.today");
+          } else if (d.isYesterday()) {
+            label = t("transaction.yesterday");
+          } else {
+            label = d.format("dddd, D MMMM YYYY");
+          }
+          const dateKey = d.format("YYYY-MM-DD");
 
-    const existing = groups.find((g) => g.date === dateKey);
-    if (existing) {
-      existing.items.push(trx);
-    } else {
-      groups.push({ label, date: dateKey, items: [trx] });
-    }
-    return groups;
-  }, []);
+          const existing = groups.find((g) => g.date === dateKey);
+          if (existing) {
+            existing.items.push(trx);
+          } else {
+            groups.push({ label, date: dateKey, items: [trx] });
+          }
+          return groups;
+        },
+        []
+      ),
+    [transactions, t]
+  );
 
   const filterOptions: { value: FilterType; label: string }[] = [
     { value: "all", label: t("transaction.filterAll") },
@@ -87,7 +101,39 @@ export function TransactionHistory() {
 
   return (
     <div className="space-y-6">
-      {/* Filter Tabs */}
+      {/* Wallet chip selector (horizontal scroll).
+          Tapping the active chip deselects it (handled in setWalletFilter). */}
+      {wallets.length > 0 && (
+        <div
+          role="tablist"
+          aria-label={t("transaction.walletFilter")}
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden"
+        >
+          <WalletChip
+            label={t("transaction.allWallets")}
+            icon={Icons.LayoutGrid}
+            active={effectiveWalletId === null}
+            onClick={() => setWalletFilter(null)}
+          />
+          {wallets.map((wallet) => {
+            const WalletIcon = (Icons[
+              wallet.icon as keyof typeof Icons
+            ] ?? Icons.Wallet) as React.ElementType;
+            const isActive = effectiveWalletId === wallet.id;
+            return (
+              <WalletChip
+                key={wallet.id}
+                label={wallet.name}
+                icon={WalletIcon}
+                active={isActive}
+                onClick={() => setWalletFilter(isActive ? null : wallet.id)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Type Filter Tabs */}
       <div role="tablist" className="flex gap-2 px-4">
         {filterOptions.map((opt) => (
           <button
@@ -107,7 +153,7 @@ export function TransactionHistory() {
       </div>
 
       {/* Transaction Groups */}
-      {!transactions || transactions.length === 0 ? (
+      {transactions.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-10 text-center dark:bg-zinc-900/50 mx-4">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
             <Icons.Receipt className="h-6 w-6" />
@@ -121,14 +167,14 @@ export function TransactionHistory() {
         </div>
       ) : (
         <div className="space-y-6 px-4">
-          {groupedTransactions?.map((group) => {
+          {groupedTransactions.map((group) => {
             // Calculate daily total
             const dayIncome = group.items
-              .filter((t) => t.type === "income")
-              .reduce((sum, t) => sum + t.amount, 0);
+              .filter((trx) => trx.type === "income")
+              .reduce((sum, trx) => sum + trx.amount, 0);
             const dayExpense = group.items
-              .filter((t) => t.type === "expense")
-              .reduce((sum, t) => sum + t.amount, 0);
+              .filter((trx) => trx.type === "expense")
+              .reduce((sum, trx) => sum + trx.amount, 0);
 
             return (
               <div key={group.date}>

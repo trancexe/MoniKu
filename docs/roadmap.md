@@ -1,40 +1,48 @@
 # Roadmap
+# Roadmap
 
 Status proyek, known issues, dan fitur yang direncanakan. Terorganisir per kategori.
 
-## 🚨 Blocker: Build Gagal
+## ✅ Status Build (per iterasi terakhir)
 
-**Status:** Build TypeScript (`npm run build`) **gagal** di:
+- `npm run build --webpack` — **PASS** (9 static pages, `out/` ≈ 4.3 MB)
+- `npx tsc --noEmit` — **PASS** (no type errors)
+- `npx eslint` pada file yang disentuh — **PASS** (0 errors, 0 warnings)
+- Project masih punya 1 pre-existing error di `src/components/analytics/InsightCards.tsx:77` (`set-state-in-effect`) yang tidak disentuh di iterasi terakhir — lihat [Known Issues](#known-issues-prioritas-tinggi)
 
-```
-src/components/debts/DebtList.tsx:80
-Type 'Dispatch<SetStateAction<string>>' is not assignable to type
-'(value: string | null, eventDetails: SelectRootChangeEventDetails) => void'.
-```
+## 🆕 Selesai di iterasi terakhir
 
-**Penyebab:** `Select.onValueChange` (dari `@base-ui/react`) bisa return `string | null`, tapi state `selectedWallet` di-type `string` (non-null).
+### Fitur
+- [x] **Hide balance toggle** di dashboard — `useSyncExternalStore` + `localStorage["moniku-hideBalance"]`. Cover Total Balance Card + transaction row amount + wallet card balances. (i18n keys: `dashboard.hideBalance/showBalance/balanceHidden`)
+- [x] **Wallet filter URL-driven** — `?wallet=<id>` di home + history, via `src/lib/hooks/useWalletFilter.ts`. Tap card/chip untuk filter, tap lagi untuk deselect, shareable URL, browser back/forward akurat
+- [x] **Wallet Card Selector** di dashboard — horizontal scroll, `src/components/ui/WalletCard.tsx`, sibling visual dari Total Balance Card
+- [x] **5 transaksi terakhir** di dashboard (sebelumnya 10), wallet-aware query (limit applied per-wallet, bukan global — fix bug D1 dari QA)
+- [x] **Wallet filter di History** — `WalletChip` row di `/transactions/history`, bisa di-stack dengan type filter (all/income/expense)
 
-**Fix:** Ubah state ke `string | null` ATAU buat wrapper:
-```typescript
-const handleWalletChange = (val: string | null) => {
-  if (val) setSelectedWallet(val);
-};
-<Select value={selectedWallet} onValueChange={handleWalletChange}>
-```
+### Pola / Infrastructure
+- [x] **`useWalletFilter` hook** (`src/lib/hooks/useWalletFilter.ts`) — single source of truth untuk URL wallet filter
+- [x] **Suspense boundary** di `src/app/page.tsx` dan `src/app/transactions/history/page.tsx` untuk `useSearchParams` di static export
+- [x] **i18n key parity check** — `id.json` dan `en.json` synchronized
 
-**Impact:** tanpa fix ini, tidak ada deployment.
+### Aksesibilitas
+- [x] Ganti `<a href>` ke `<Link>` Next.js di Quick Actions (dashboard)
+- [x] Ganti `<article onClick>` ke `<button>` di transaction row (dashboard + history)
+- [x] `aria-pressed` di hide-balance toggle
+- [x] `role="tablist"` + `aria-selected` di wallet card/chip selector
+- [x] Skip link + `aria-label` patterns (lihat [Conventions](conventions.md))
 
----
+## 🚨 Blocker sebelumnya (resolved)
+
+- ~~Build TypeScript gagal di `DebtList.tsx:80`~~ → **RESOLVED**. Build bersih.
 
 ## 🐛 Known Issues (Prioritas Tinggi)
 
 ### Build & Lint
-- [ ] Fix build error di `DebtList.tsx:80` (lihat di atas)
-- [ ] Fix 11 ESLint errors:
-  - 3× `react-hooks/set-state-in-effect` di `BottomNav.tsx:14`, `ThemeSettings.tsx:14`, `TransactionEditSheet.tsx:45-54`
-  - 5× `@typescript-eslint/no-explicit-any` di master-data components
-  - 3× `@typescript-eslint/no-explicit-any` di `TransactionForm.tsx:125,145`
-- [ ] Cleanup 5 unused vars warnings (`SyncSettings`, `ThemeSettings`)
+- [ ] Fix 1 pre-existing ESLint error di `src/components/analytics/InsightCards.tsx:77` (`react-hooks/set-state-in-effect`)
+- [ ] Fix 90 pre-existing ESLint warnings (mostly `react-hooks/set-state-in-effect` di analytics + unused vars di `useAnalyticsData.ts`)
+- [ ] Fix 8 `react-hooks/set-state-in-effect` violations di `BottomNav.tsx:14`, `ThemeSettings.tsx:14`, `TransactionEditSheet.tsx:45-54`
+- [ ] Fix 5 `@typescript-eslint/no-explicit-any` di master-data (icon lookup casting pattern)
+- [ ] Fix 2 `@typescript-eslint/no-explicit-any` di `TransactionForm.tsx:125,145`
 
 ### Security
 - [ ] **Restore tanpa validasi schema** (gdrive.ts:69-79) — risiko data loss. Fix dengan zod validation + backup-then-restore
@@ -47,14 +55,11 @@ const handleWalletChange = (val: string | null) => {
 - [ ] **Replace `console.error` di production** dengan logger terpusat
 
 ### Accessibility
-- [ ] Ganti `<html lang="en">` ke `lang="id"` (layout.tsx:39)
+- [ ] Ganti `<html lang="en">` ke `lang="id"` (layout.tsx:39) — LocaleProvider sudah update runtime, tinggal hardcoded fallback di `<html>`
 - [ ] Hapus `maximumScale: 1` (layout.tsx:21) — WCAG 1.4.4 violation
-- [ ] Ganti `<article onClick>` ke `<button>` di transaction list (TransactionHistory.tsx, DashboardOverview.tsx)
-- [ ] Ganti `<a href>` ke `<Link>` di Dashboard quick actions
 - [ ] Tambah `aria-label` di BottomNav icon-only links
 - [ ] Tambah `aria-label` di CustomNumpad buttons
-- [ ] Tambah skip-to-content link
-- [ ] Tambah `aria-busy` di loading states
+- [ ] Tambah skip-to-content link di layout.tsx
 
 ### PWA
 - [ ] **Fix PWA offline mode** — `AppInit.tsx:11-17` unregister semua SW sebagai workaround. Investigasi root cause loop, fix SW caching strategy

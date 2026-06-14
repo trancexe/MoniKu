@@ -7,10 +7,10 @@ MoniKu menyimpan data transaksi, dompet, kategori, dan catatan hutang/piutang la
 Dibangun sebagai PWA (Progressive Web App) dengan static export, MoniKu bisa dipasang di home-screen ponsel dan berjalan offline.
 
 ## Fitur Utama
-
-- **Dashboard** — total saldo gabungan + 10 transaksi terakhir + quick action
+## Fitur Utama
+- **Dashboard** — total saldo gabungan (atau saldo per-wallet) + 5 transaksi terakhir + quick action. Bisa sembunyikan saldo (privacy mode) dan filter per wallet via card selector.
 - **Catat Transaksi** — form dengan custom numpad, picker kategori & dompet
-- **Riwayat Transaksi** — dikelompokkan per hari (Hari Ini / Kemarin / tanggal lengkap), filter Pemasukan|Pengeluaran
+- **Riwayat Transaksi** — dikelompokkan per hari (Hari Ini / Kemarin / tanggal lengkap), filter Pemasukan|Pengeluaran|Per Dompet
 - **Edit & Hapus Transaksi** — sheet edit, dialog konfirmasi hapus
 - **Master Data** — CRUD dompet dan kategori dengan icon picker
 - **Hutang/Piutang** — catatan & tombol bayar lunas
@@ -87,7 +87,9 @@ src/
     ├── db.ts            # Dexie schema + types
     ├── gdrive.ts        # Google Drive upload/download
     ├── seed.ts          # Data awal (kategori & dompet default)
-    └── utils.ts         # cn() helper
+    ├── utils.ts         # cn() helper
+    ├── hooks/           # Custom React hooks (useWalletFilter, …)
+    └── i18n/            # LocaleProvider + locales/{id,en}.json
 ```
 
 Lihat [Architecture](docs/architecture.md) untuk detail data flow & rationale.
@@ -109,7 +111,7 @@ Mulai dari [docs/INDEX.md](docs/INDEX.md). Highlights:
 
 ## Status Build
 
-⚠️ **Build TypeScript sedang gagal** di `src/components/debts/DebtList.tsx:80` — masalah typing `Select.onValueChange`. Akan difix dalam iterasi berikutnya. Lihat [Roadmap](docs/roadmap.md).
+✅ **Build TypeScript & ESLint bersih** untuk semua file yang disentuh saat iterasi terakhir. Project static export 9 halaman ter-render, total `out/` ≈ 4.3 MB. Detail status lint/build per-commit ada di git log. Lihat [Roadmap](docs/roadmap.md) untuk known issues yang masih outstanding (PWA SW cleanup, OAuth security hardening, dsb).
 
 ## Lisensi
 

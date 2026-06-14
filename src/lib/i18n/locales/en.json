@@ -28,7 +28,11 @@
     "recentTransactions": "Recent Transactions",
     "viewAll": "View All",
     "emptyTitle": "No transactions yet",
-    "emptyDesc": "Start recording your expenses or income"
+    "emptyDesc": "Start recording your expenses or income",
+    "hideBalance": "Hide balance",
+    "showBalance": "Show balance",
+    "balanceHidden": "Rp •••••••",
+    "allWallets": "All"
   },
   "transaction": {
     "pageTitle": "Record Transaction",
@@ -68,7 +72,10 @@
     "emptyFiltered": "No {type} yet",
     "emptyAll": "No transactions yet",
     "emptyDescHistory": "Start recording your financial transactions",
-    "categoryOther": "Other"
+    "categoryOther": "Other",
+    "allWallets": "All wallets",
+    "walletFilter": "Wallet filter",
+    "walletFilterClear": "Clear wallet filter"
   },
   "numpad": {
     "submit": "Save Transaction",

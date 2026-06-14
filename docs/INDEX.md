@@ -12,26 +12,26 @@ Wiki ini memecah detail teknis & fitur ke dalam file fokus. Mulai dari sini untu
 | [Conventions](conventions.md) | Naming, file organization, code style |
 
 ## Per Fitur
-
+## Per Fitur
 | Dokumen | Mencakup |
 |---------|----------|
 | [Features Overview](features/index.md) | Peta semua fitur & link ke detail |
-| [Dashboard](features/dashboard.md) | `/` — total saldo, transaksi terakhir, quick actions |
-| [Transactions](features/transactions.md) | `/transactions`, `/transactions/history` — form, history, edit, delete, numpad |
+| [Dashboard](features/dashboard.md) | `/` — total saldo, 5 transaksi terakhir, hide balance, wallet card selector, quick actions |
+| [Transactions](features/transactions.md) | `/transactions`, `/transactions/history` — form, history, wallet filter, edit, delete, numpad |
 | [Categories & Wallets](features/categories-wallets.md) | `/settings` → master data |
 | [Debts](features/debts.md) | `/debts` — catatan hutang/piutang & repay |
 | [Settings](features/settings.md) | `/settings` — theme, Google Drive sync |
-| [Analytics](features/analytics.md) | `/analytics` — placeholder, rencana ke depan |
+| [Analytics](features/analytics.md) | `/analytics` — chart, laporan, recurring detection (Tier 1 implemented) |
 
 ## Topik Lintas
-
+## Topik Lintas
 | Dokumen | Mencakup |
 |---------|----------|
 | [Theming](theming.md) | next-themes, oklch tokens, light/dark |
 | [PWA](pwa.md) | next-pwa, service worker, manifest, status |
 | [Google Drive Sync](google-drive-sync.md) | OAuth implicit flow, backup format, security |
 | [Deployment](deployment.md) | Static export, hosting, headers/CSP |
-| [Roadmap](roadmap.md) | Known issues (audit) & planned features |
+| [Roadmap](roadmap.md) | Known issues, planned & recently-shipped features |
 
 ## Konvensi Wiki
 
