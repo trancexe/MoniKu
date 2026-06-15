@@ -33,6 +33,16 @@ export interface DebtLoan {
   total_amount: number;
   remaining_amount: number;
   status: 'active' | 'paid';
+  /**
+   * Optional. The current `DebtForm` does not collect this — it is
+   * reserved for a future "due date" feature. When added, change to
+   * `due_date: number` (required) and update `DebtForm.tsx` plus the
+   * Zod schema in `lib/sync-utils.ts` to require it on import.
+   */
+  due_date?: number;
+  notes?: string;
+  created_at?: number;
+  updated_at?: number;
 }
 
 export interface RecurringTransaction {
@@ -86,7 +96,7 @@ db.version(3).stores({
   wallets: 'id, name, updated_at',
   categories: 'id, type, name',
   transactions: 'id, wallet_id, category_id, type, date, sync_status',
-  debt_loans: 'id, type, person_name, status',
+  debt_loans: 'id, type, person_name, status, due_date',
   recurring_transactions: 'id, status, frequency, next_expected_date, [wallet_id+category_id]',
   security: 'key'
 });
