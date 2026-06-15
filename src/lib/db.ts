@@ -57,6 +57,7 @@ export const db = new Dexie('FinTrackDB') as Dexie & {
   transactions: EntityTable<Transaction, 'id'>;
   debt_loans: EntityTable<DebtLoan, 'id'>;
   recurring_transactions: EntityTable<RecurringTransaction, 'id'>;
+  security: EntityTable<{ key: string; value: string }, 'key'>;
 };
 
 // Schema declaration
@@ -74,4 +75,18 @@ db.version(2).stores({
   transactions: 'id, wallet_id, category_id, type, date, sync_status',
   debt_loans: 'id, type, person_name, status',
   recurring_transactions: 'id, status, frequency, next_expected_date, [wallet_id+category_id]'
+});
+
+// v3: Add security table for sensitive material (PIN hash/salt, lockout state).
+// Stored in IndexedDB instead of localStorage to reduce XSS-exfiltration
+// surface: localStorage is readable by any script on the origin, while
+// IndexedDB access is constrained by the same-origin policy and is
+// typically enumerated separately from JSX/data paths.
+db.version(3).stores({
+  wallets: 'id, name, updated_at',
+  categories: 'id, type, name',
+  transactions: 'id, wallet_id, category_id, type, date, sync_status',
+  debt_loans: 'id, type, person_name, status',
+  recurring_transactions: 'id, status, frequency, next_expected_date, [wallet_id+category_id]',
+  security: 'key'
 });

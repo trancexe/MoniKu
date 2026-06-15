@@ -1,5 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { dexieAuthJSONStorage } from "./auth-storage";
 
 interface AuthState {
   isAppLocked: boolean;
@@ -10,7 +11,7 @@ interface AuthState {
   isUnlockedSession: boolean;
   failedAttempts: number;
   lockoutUntil: number | null;
-  
+
   // Actions
   setAppLocked: (locked: boolean) => void;
   setPinData: (hash: string | null, salt: string | null) => void;
@@ -32,7 +33,7 @@ export const useAuthStore = create<AuthState>()(
       isUnlockedSession: false,
       failedAttempts: 0,
       lockoutUntil: null,
-      
+
       setAppLocked: (locked) => set({ isAppLocked: locked, isUnlockedSession: !locked }),
       setPinData: (hash, salt) => set({ pinHash: hash, pinSalt: salt }),
       setBiometricEnabled: (enabled, credId) => set({ isBiometricEnabled: enabled, credentialId: credId || null }),
@@ -48,7 +49,11 @@ export const useAuthStore = create<AuthState>()(
       resetFailedAttempts: () => set({ failedAttempts: 0, lockoutUntil: null }),
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
+      // Persist via IndexedDB instead of localStorage to reduce XSS
+      // exfiltration surface. See lib/auth-storage.ts for the migration
+      // shim that moves any pre-existing localStorage entry on first read.
+      storage: dexieAuthJSONStorage,
       partialize: (state) => ({
         isAppLocked: state.isAppLocked,
         pinHash: state.pinHash,
