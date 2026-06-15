@@ -97,7 +97,7 @@ export function TransactionForm() {
         if (!currentWallet) throw new Error("Wallet not found");
 
         await db.transactions.add({
-          id: crypto.randomUUID(),
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
           wallet_id: walletId,
           category_id: categoryId,
           type,

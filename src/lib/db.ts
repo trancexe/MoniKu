@@ -24,6 +24,14 @@ export interface Transaction {
   date: number;
   notes: string;
   sync_status: 'synced' | 'pending';
+  /**
+   * Optional FK to a debt_loans row. Set when the transaction is a
+   * payment/receipt that contributes to a debt or loan. Unset for
+   * regular transactions. Recalculate the debt's remaining_amount
+   * and status from this field via `recalculateDebt` in
+   * `lib/debt-utils.ts` whenever this changes.
+   */
+  debt_id?: string;
 }
 
 export interface DebtLoan {
@@ -96,6 +104,20 @@ db.version(3).stores({
   wallets: 'id, name, updated_at',
   categories: 'id, type, name',
   transactions: 'id, wallet_id, category_id, type, date, sync_status',
+  debt_loans: 'id, type, person_name, status, due_date',
+  recurring_transactions: 'id, status, frequency, next_expected_date, [wallet_id+category_id]',
+  security: 'key'
+});
+
+// v4: Index transactions by debt_id to support partial payments and
+// the per-debt payment history. debt_id is optional, so the migration
+// is purely additive — existing transactions get undefined, which is
+// the same value they had implicitly. No data loss, no special
+// migration hook required.
+db.version(4).stores({
+  wallets: 'id, name, updated_at',
+  categories: 'id, type, name',
+  transactions: 'id, wallet_id, category_id, type, date, sync_status, debt_id',
   debt_loans: 'id, type, person_name, status, due_date',
   recurring_transactions: 'id, status, frequency, next_expected_date, [wallet_id+category_id]',
   security: 'key'

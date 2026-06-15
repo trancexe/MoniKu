@@ -6,18 +6,18 @@ export async function seedDatabase() {
 
   if (categoriesCount === 0) {
     await db.categories.bulkAdd([
-      { id: crypto.randomUUID(), type: 'income', name: 'Gaji', icon: 'Briefcase' },
-      { id: crypto.randomUUID(), type: 'income', name: 'Bonus', icon: 'Gift' },
-      { id: crypto.randomUUID(), type: 'expense', name: 'Makan', icon: 'Utensils' },
-      { id: crypto.randomUUID(), type: 'expense', name: 'Transport', icon: 'Car' },
-      { id: crypto.randomUUID(), type: 'expense', name: 'Belanja', icon: 'ShoppingCart' },
-      { id: crypto.randomUUID(), type: 'expense', name: 'Tagihan', icon: 'FileText' },
+      { id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)), type: 'income', name: 'Gaji', icon: 'Briefcase' },
+      { id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)), type: 'income', name: 'Bonus', icon: 'Gift' },
+      { id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)), type: 'expense', name: 'Makan', icon: 'Utensils' },
+      { id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)), type: 'expense', name: 'Transport', icon: 'Car' },
+      { id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)), type: 'expense', name: 'Belanja', icon: 'ShoppingCart' },
+      { id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)), type: 'expense', name: 'Tagihan', icon: 'FileText' },
     ]);
   }
 
   if (walletsCount === 0) {
     await db.wallets.add({
-      id: crypto.randomUUID(),
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
       name: 'Dompet Tunai',
       icon: 'Wallet',
       current_balance: 0,

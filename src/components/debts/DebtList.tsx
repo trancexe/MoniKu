@@ -1,76 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users } from "lucide-react";
+import { Users, ChevronRight } from "lucide-react";
 import { RevealStagger } from "@/components/ui/RevealStagger";
 import { useT, useFormatLocale } from "@/lib/i18n";
+import Link from "next/link";
 
 export function DebtList() {
   const t = useT();
   const { formatCurrencyRaw } = useFormatLocale();
   const debts = useLiveQuery(() => db.debt_loans.toArray());
-  const wallets = useLiveQuery(() => db.wallets.toArray());
-  const [selectedWallet, setSelectedWallet] = useState<string>("");
-  // Re-entrancy guard — see TransactionForm. Tracks the debt id
-  // currently being repaid so the user cannot repay the same debt
-  // twice on a fast double-tap. Distinct from `isSubmitting` for
-  // single forms because DebtList renders one button per debt and
-  // we only want to block the one in flight.
-  const [repayInFlight, setRepayInFlight] = useState<string | null>(null);
 
-  const handleRepay = async (debtId: string, remainingAmount: number, type: 'debt' | 'loan') => {
-    if (!selectedWallet) return toast.error(t("debt.selectWalletFirst"));
-    if (repayInFlight) return;
-
-    setRepayInFlight(debtId);
-    try {
-      await db.transaction('rw', db.transactions, db.wallets, db.debt_loans, async () => {
-        const wallet = await db.wallets.get(selectedWallet);
-        if (!wallet) throw new Error("Wallet not found");
-
-        const debt = await db.debt_loans.get(debtId);
-        if (!debt) throw new Error("Debt not found");
-
-        await db.transactions.add({
-          id: crypto.randomUUID(),
-          wallet_id: selectedWallet,
-          category_id: "system-repayment",
-          type: type === 'debt' ? 'expense' : 'income',
-          amount: remainingAmount,
-          date: Date.now(),
-          notes: `Pelunasan ${type === 'debt' ? 'Hutang ke' : 'Piutang dari'} ${debt.person_name}`,
-          sync_status: 'pending'
-        });
-
-        const newBalance = type === 'debt'
-          ? wallet.current_balance - remainingAmount
-          : wallet.current_balance + remainingAmount;
-
-        await db.wallets.update(selectedWallet, {
-          current_balance: newBalance,
-          updated_at: Date.now()
-        });
-
-        await db.debt_loans.update(debtId, {
-          remaining_amount: 0,
-          status: 'paid'
-        });
-      });
-      toast.success(t("debt.repaySuccess"));
-    } catch (error) {
-      if (process.env.NODE_ENV !== 'production') console.error(error);
-      toast.error(t("debt.repayFailed"));
-    } finally {
-      setRepayInFlight(null);
-    }
-  };
-
-  const isLoading = !debts || !wallets;
+  const isLoading = !debts;
 
   if (isLoading) {
     return (
@@ -84,52 +26,50 @@ export function DebtList() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border bg-card p-4">
-        <label htmlFor="walletSelect" className="text-xs font-medium text-muted-foreground block mb-2">{t("debt.selectWallet")}</label>
-        <Select value={selectedWallet} onValueChange={(val) => { if (val !== null) setSelectedWallet(val); }}>
-          <SelectTrigger id="walletSelect">
-            <SelectValue placeholder={t("debt.selectWalletPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            {wallets?.map(w => (
-              <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="space-y-4">
         <RevealStagger className="space-y-4">
-          {debts?.map(debt => (
-            <div key={debt.id} className="rounded-xl border bg-card p-4 shadow-sm flex flex-col space-y-3">
+          {debts?.map((debt) => (
+            <Link
+              href={`/debts/detail?id=${debt.id}`}
+              key={debt.id}
+              className="group block rounded-xl border bg-card p-4 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+            >
               <div className="flex justify-between items-center">
                 <div>
-                  <span className={`text-xs font-bold uppercase ${debt.type === 'debt' ? 'text-red-500' : 'text-green-500'}`}>
-                    {debt.type === 'debt' ? t("debt.type_debt_label") : t("debt.type_loan_label")}
+                  <span
+                    className={`text-xs font-bold uppercase ${
+                      debt.type === "debt" ? "text-red-500" : "text-green-500"
+                    }`}
+                  >
+                    {debt.type === "debt"
+                      ? t("debt.type_debt_label")
+                      : t("debt.type_loan_label")}
                   </span>
                   <p className="font-semibold text-lg">{debt.person_name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-muted-foreground">{t("debt.remaining")}</p>
-                  <p className="font-bold tabular-nums">{formatCurrencyRaw(debt.remaining_amount)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("debt.remaining")}
+                  </p>
+                  <p className="font-bold tabular-nums">
+                    {formatCurrencyRaw(debt.remaining_amount)}
+                  </p>
                 </div>
               </div>
 
-              {debt.status === 'active' ? (
-                <Button
-                  onClick={() => handleRepay(debt.id, debt.remaining_amount, debt.type)}
-                  disabled={repayInFlight !== null}
-                  aria-busy={repayInFlight === debt.id}
-                  className="w-full tabular-nums active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {t("debt.repay")} ({formatCurrencyRaw(debt.remaining_amount)})
-                </Button>
-              ) : (
-                <div className="rounded bg-green-100 text-green-600 text-center py-2 text-sm font-bold dark:bg-green-900/30 dark:text-green-400">
-                  {t("debt.paid")}
-                </div>
-              )}
-            </div>
+              <div className="mt-4 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 pt-3">
+                {debt.status === "active" ? (
+                  <span className="text-sm text-zinc-500 font-medium">
+                    {t("debt.list.viewDetail") || "Lihat Detail"}
+                  </span>
+                ) : (
+                  <div className="rounded px-2 py-1 bg-green-100 text-green-600 text-xs font-bold dark:bg-green-900/30 dark:text-green-400">
+                    {t("debt.paid")}
+                  </div>
+                )}
+                <ChevronRight className="h-4 w-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
+              </div>
+            </Link>
           ))}
         </RevealStagger>
 
@@ -138,7 +78,9 @@ export function DebtList() {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
               <Users className="h-6 w-6" />
             </div>
-            <p className="font-medium text-zinc-900 dark:text-zinc-100">{t("debt.empty")}</p>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">
+              {t("debt.empty")}
+            </p>
             <p className="mt-1 text-sm text-zinc-500 max-w-[200px]">
               {t("debt.emptyDesc")}
             </p>
@@ -148,3 +90,4 @@ export function DebtList() {
     </div>
   );
 }
+

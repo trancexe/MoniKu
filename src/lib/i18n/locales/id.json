@@ -137,7 +137,39 @@
     "saveFailed": "Gagal menyimpan",
     "validationRequired": "Nama wajib diisi",
     "type_debt": "Hutang",
-    "type_loan": "Piutang"
+    "type_loan": "Piutang",
+    "detail": {
+      "title": "Detail Hutang / Piutang",
+      "back": "Kembali ke daftar",
+      "totalAmount": "Total",
+      "remainingAmount": "Sisa",
+      "statusLabel": "Status",
+      "paymentHistory": "Riwayat Pembayaran",
+      "noPayments": "Belum ada pembayaran untuk catatan ini.",
+      "unlink": "Putuskan",
+      "unlinkConfirmTitle": "Putuskan Transaksi?",
+      "unlinkConfirmDesc": "Transaksi ini tidak akan lagi dihitung sebagai pembayaran untuk catatan ini. Tindakan ini tidak mengembalikan saldo dompet — transaksi tetap ada di riwayat transaksi Anda.",
+      "pay": "Bayar / Terima",
+      "notFound": "Catatan hutang/piutang tidak ditemukan",
+      "overpaidWarning": "Pembayaran melebihi sisa hutang. Sisa akan dihitung sebagai 0."
+    },
+    "modal": {
+      "title": "Pembayaran",
+      "tabNew": "Catat Baru",
+      "tabLink": "Pilih Transaksi",
+      "amountLabel": "Nominal Pembayaran",
+      "loadOlder": "Tampilkan Lebih Lama",
+      "noLinkable": "Tidak ada transaksi yang dapat dihubungkan.",
+      "link": "Hubungkan",
+      "createSuccess": "Pembayaran berhasil dicatat",
+      "linkSuccess": "Transaksi terhubung ke catatan",
+      "unlinkSuccess": "Transaksi diputuskan dari catatan",
+      "unlinkFailed": "Gagal memutuskan transaksi",
+      "loadFailed": "Gagal memuat data"
+    },
+    "list": {
+      "viewDetail": "Lihat Detail"
+    }
   },
   "analytics": {
     "subtitle": "Ringkasan pengeluaran dan pemasukan",

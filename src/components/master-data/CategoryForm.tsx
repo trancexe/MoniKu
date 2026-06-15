@@ -48,7 +48,7 @@ export function CategoryForm() {
 
     try {
       await db.categories.add({
-        id: crypto.randomUUID(),
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
         name: parsed.data.name,
         type,
         icon,

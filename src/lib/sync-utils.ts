@@ -46,6 +46,18 @@ const transactionSchema = z.object({
   date: z.number(),
   notes: z.string(),
   sync_status: z.enum(["synced", "pending"]),
+  /**
+   * Added in backup v3 (parallel with Dexie schema v4). Optional in
+   * the schema so v1/v2 backups — which pre-date partial payments
+   * and never set debt_id on a transaction — still parse cleanly.
+   * Restored transactions keep whatever debt_id the source had, so
+   * a debt's payment history survives a device migration. If the
+   * referenced debt was not restored (e.g. user did a partial
+   * restore), the dangling reference is harmless: the transaction
+   * shows in history lists without a debt and the user can re-link
+   * it via the "Link Existing" tab.
+   */
+  debt_id: z.string().optional(),
 }) satisfies z.ZodType<Transaction>;
 
 const debtLoanSchema = z.object({
@@ -115,7 +127,7 @@ export async function exportAllData() {
     debt_loans: await db.debt_loans.toArray(),
     recurring_transactions: await db.recurring_transactions.toArray(),
     exportDate: Date.now(),
-    version: 2,
+    version: 3,
   };
   return data;
 }

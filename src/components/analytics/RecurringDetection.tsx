@@ -54,7 +54,7 @@ export function RecurringDetection({
       setProcessing(pattern.pattern_key);
       try {
         const record: RecurringTransaction = {
-          id: crypto.randomUUID(),
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
           user_pattern_key: pattern.pattern_key,
           wallet_id: pattern.wallet_id,
           category_id: pattern.category_id,
@@ -84,7 +84,7 @@ export function RecurringDetection({
       setProcessing(pattern.pattern_key);
       try {
         const record: RecurringTransaction = {
-          id: crypto.randomUUID(),
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
           user_pattern_key: pattern.pattern_key,
           wallet_id: pattern.wallet_id,
           category_id: pattern.category_id,

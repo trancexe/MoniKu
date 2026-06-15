@@ -1,0 +1,214 @@
+"use client";
+
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ChevronLeft, Trash2, ArrowUpRight, ArrowDownLeft, ReceiptText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useT, useFormatLocale } from "@/lib/i18n";
+import dayjs from "dayjs";
+import { RepaymentModal } from "@/components/debts/RepaymentModal";
+import { useState } from "react";
+import { toast } from "sonner";
+import { recalculateDebt } from "@/lib/debt-utils";
+import { RevealStagger } from "@/components/ui/RevealStagger";
+import Link from "next/link";
+
+/**
+ * Client implementation of the debt detail page. Lives in its own
+ * "use client" file so the route segment's `page.tsx` can stay a
+ * server component and export `generateStaticParams` — required by
+ * Next.js 16 static export (`output: "export"`).
+ */
+export function DebtDetailClient() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+  const router = useRouter();
+  const t = useT();
+  const { formatCurrencyRaw } = useFormatLocale();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const debt = useLiveQuery(() => {
+    if (!id) return undefined;
+    return db.debt_loans.get(id);
+  }, [id]);
+  const linkedTransactions = useLiveQuery(
+    async () => {
+      if (!id) return [];
+      const txs = await db.transactions.where("debt_id").equals(id).toArray();
+      return txs.sort((a, b) => b.date - a.date);
+    },
+    [id]
+  );
+
+  if (!id) {
+    return (
+      <div className="flex flex-col items-center justify-center p-10 space-y-4 text-center">
+        <ReceiptText className="h-12 w-12 text-muted-foreground opacity-50" />
+        <p className="font-medium">{t("debt.detail.notFound")}</p>
+        <Link href="/debts">
+          <Button variant="outline">{t("debt.detail.back")}</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const handleUnlink = async (transactionId: string) => {
+    if (!confirm(t("debt.detail.unlinkConfirmDesc"))) return;
+    try {
+      await db.transactions.update(transactionId, { debt_id: undefined });
+      await recalculateDebt(id);
+      toast.success(t("debt.modal.unlinkSuccess"));
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") console.error("Unlink failed", error);
+      toast.error(t("debt.modal.unlinkFailed"));
+    }
+  };
+
+  const handleDeleteDebt = async () => {
+    if (!confirm(t("common.deleteConfirm"))) return;
+    try {
+      // First explicitly unlink any linked transactions to be safe,
+      // although they become effectively unlinked if the debt_id no longer exists.
+      const txs = await db.transactions.where("debt_id").equals(id).toArray();
+      await db.transaction('rw', db.transactions, db.debt_loans, async () => {
+        for (const tx of txs) {
+          await db.transactions.update(tx.id, { debt_id: undefined });
+        }
+        await db.debt_loans.delete(id);
+      });
+      toast.success(t("common.deleted"));
+      router.push("/debts");
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") console.error("Delete failed", error);
+      toast.error(t("common.deleteFailed"));
+    }
+  };
+
+  if (debt === undefined || linkedTransactions === undefined) {
+    return (
+      <div className="flex flex-col p-4 space-y-4 animate-pulse" aria-busy="true">
+        <div className="h-10 w-32 bg-muted/60 rounded-xl" />
+        <div className="h-40 w-full bg-muted/60 rounded-xl" />
+        <div className="h-40 w-full bg-muted/60 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (debt === null) {
+    return (
+      <div className="flex flex-col items-center justify-center p-10 space-y-4 text-center">
+        <ReceiptText className="h-12 w-12 text-muted-foreground opacity-50" />
+        <p className="font-medium">{t("debt.detail.notFound")}</p>
+        <Link href="/debts">
+          <Button variant="outline">{t("debt.detail.back")}</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col p-4 space-y-6 pb-36">
+      <header className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Link href="/debts">
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+          </Link>
+          <h1 className="text-xl font-bold">{t("debt.detail.title")}</h1>
+        </div>
+        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={handleDeleteDebt}>
+          <Trash2 className="h-5 w-5" />
+        </Button>
+      </header>
+
+      {/* Debt Info Card */}
+      <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center space-x-2 mb-1">
+              <span className={`flex items-center text-xs font-bold uppercase ${debt.type === 'debt' ? 'text-red-500' : 'text-green-500'}`}>
+                {debt.type === 'debt' ? <ArrowUpRight className="h-4 w-4 mr-1" /> : <ArrowDownLeft className="h-4 w-4 mr-1" />}
+                {debt.type === 'debt' ? t("debt.type_debt_label") : t("debt.type_loan_label")}
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold">{debt.person_name}</h2>
+          </div>
+          {debt.status === "paid" && (
+            <div className="rounded-full px-3 py-1 bg-green-100 text-green-700 text-xs font-bold dark:bg-green-900/40 dark:text-green-400">
+              {t("debt.paid")}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">{t("debt.detail.totalAmount")}</p>
+            <p className="font-semibold tabular-nums">{formatCurrencyRaw(debt.total_amount)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">{t("debt.detail.remainingAmount")}</p>
+            <p className="font-bold tabular-nums text-lg">{formatCurrencyRaw(debt.remaining_amount)}</p>
+          </div>
+        </div>
+
+        {debt.status === "active" && (
+          <Button
+            className="w-full rounded-xl py-6 active:scale-[0.98] transition-transform font-semibold"
+            onClick={() => setIsModalOpen(true)}
+          >
+            {t("debt.detail.pay")}
+          </Button>
+        )}
+      </div>
+
+      {/* Payment History */}
+      <section className="space-y-4">
+        <h3 className="font-semibold px-2">{t("debt.detail.paymentHistory")}</h3>
+
+        {linkedTransactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-8 text-center dark:bg-zinc-900/50">
+            <ReceiptText className="h-8 w-8 text-zinc-400 mb-3" />
+            <p className="text-sm text-zinc-500">{t("debt.detail.noPayments")}</p>
+          </div>
+        ) : (
+          <RevealStagger className="space-y-3">
+            {linkedTransactions.map(tx => (
+              <div key={tx.id} className="rounded-xl border bg-card p-4 flex flex-col space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold tabular-nums">{formatCurrencyRaw(tx.amount)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {dayjs(tx.date).format("DD MMM YYYY, HH:mm")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 h-8"
+                    onClick={() => handleUnlink(tx.id)}
+                  >
+                    {t("debt.detail.unlink")}
+                  </Button>
+                </div>
+                {tx.notes && (
+                  <div className="text-sm bg-muted/40 p-2 rounded-lg text-muted-foreground">
+                    {tx.notes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </RevealStagger>
+        )}
+      </section>
+
+      <RepaymentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        debt={debt}
+      />
+    </div>
+  );
+}

@@ -41,7 +41,7 @@ export function WalletForm() {
 
     try {
       await db.wallets.add({
-        id: crypto.randomUUID(),
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
         name: parsed.data.name,
         icon,
         current_balance: parsed.data.balance,

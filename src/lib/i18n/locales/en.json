@@ -137,7 +137,39 @@
     "saveFailed": "Failed to save",
     "validationRequired": "Name is required",
     "type_debt": "Debt",
-    "type_loan": "Receivable"
+    "type_loan": "Receivable",
+    "detail": {
+      "title": "Debt / Receivable Detail",
+      "back": "Back to list",
+      "totalAmount": "Total",
+      "remainingAmount": "Remaining",
+      "statusLabel": "Status",
+      "paymentHistory": "Payment History",
+      "noPayments": "No payments recorded for this entry yet.",
+      "unlink": "Unlink",
+      "unlinkConfirmTitle": "Unlink Transaction?",
+      "unlinkConfirmDesc": "This transaction will no longer count toward this debt/receivable. The wallet balance is not reversed — the transaction remains in your history.",
+      "pay": "Pay / Receive",
+      "notFound": "Debt/receivable not found",
+      "overpaidWarning": "Payment exceeds the remaining amount. Remaining will be set to 0."
+    },
+    "modal": {
+      "title": "Payment",
+      "tabNew": "New Payment",
+      "tabLink": "Link Existing",
+      "amountLabel": "Payment Amount",
+      "loadOlder": "Show Older",
+      "noLinkable": "No linkable transactions found.",
+      "link": "Link",
+      "createSuccess": "Payment recorded",
+      "linkSuccess": "Transaction linked to entry",
+      "unlinkSuccess": "Transaction unlinked from entry",
+      "unlinkFailed": "Failed to unlink transaction",
+      "loadFailed": "Failed to load data"
+    },
+    "list": {
+      "viewDetail": "View Detail"
+    }
   },
   "analytics": {
     "subtitle": "Summary of expenses and income",
