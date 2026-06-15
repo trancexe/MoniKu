@@ -52,7 +52,6 @@ export function CashFlowForecast({
   hasData,
 }: CashFlowForecastProps) {
   const t = useT();
-  const { formatCurrency } = useFormatLocale();
 
   const forecast = useMemo(() => getForecast(), [getForecast]);
 

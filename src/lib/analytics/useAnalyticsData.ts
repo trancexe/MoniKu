@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, Transaction, Category, Wallet, RecurringTransaction } from "@/lib/db";
+import { db, Transaction, Category, RecurringTransaction } from "@/lib/db";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 
@@ -597,7 +597,6 @@ export function useAnalyticsData() {
     const groups = new Map<string, Transaction[]>();
     for (const t of transactions) {
       if (t.type === "income") continue;  // exclude income by default
-      const amountBucket = Math.round(t.amount / (t.amount * 0.05 || 1)) * (t.amount * 0.05 || 1);
       const key = `${t.wallet_id}__${t.category_id}__${Math.round(t.amount / 100) * 100}`;
       const group = groups.get(key) || [];
       group.push(t);

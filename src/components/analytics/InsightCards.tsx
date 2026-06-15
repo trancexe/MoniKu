@@ -30,12 +30,7 @@ function dismissInsight(id: string) {
   localStorage.setItem(DISMISS_KEY, JSON.stringify(current));
 }
 
-function isInsightDismissed(id: string): boolean {
-  const dismissed = getDismissed();
-  const ts = dismissed[id];
-  if (!ts) return false;
-  return Date.now() - ts < DISMISS_DURATION_MS;
-}
+
 
 interface InsightCardsProps {
   getInsights: () => InsightItem[];
@@ -74,6 +69,7 @@ export function InsightCards({ getInsights, hasData }: InsightCardsProps) {
     for (const [id, ts] of Object.entries(dismissed)) {
       if (Date.now() - ts < DISMISS_DURATION_MS) active.add(id);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDismissedIds(active);
   }, []);
 
