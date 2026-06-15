@@ -121,6 +121,7 @@ export default function AnalyticsPage() {
         <RecurringDetection
           detectRecurring={analytics.detectRecurring}
           confirmedRecurring={analytics.recurringRecords}
+          categoryMap={analytics.categoryMap}
           hasData={hasData}
         />
       </div>

@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { AnalyticsCard, AnalyticsEmpty } from "./AnalyticsCard";
 import { useT, useFormatLocale } from "@/lib/i18n";
 import { RecurringPattern } from "@/lib/analytics/useAnalyticsData";
-import { db, RecurringTransaction } from "@/lib/db";
+import { db, RecurringTransaction, Category } from "@/lib/db";
 import { toast } from "sonner";
 import {
   RefreshCw,
@@ -17,6 +17,14 @@ import {
 interface RecurringDetectionProps {
   detectRecurring: () => RecurringPattern[];
   confirmedRecurring: RecurringTransaction[];
+  /**
+   * Map from category_id → Category. Resolved in the parent analytics
+   * page via `useAnalyticsData().categoryMap`. Used to display the
+   * category name in the "Confirmed" section — the `RecurringTransaction`
+   * table only stores `category_id` (per the analytics Tier 1 design),
+   * so the name has to be joined in at render time.
+   */
+  categoryMap: Map<string, Category>;
   hasData: boolean;
 }
 
@@ -31,6 +39,7 @@ const FREQ_LABELS: Record<string, string> = {
 export function RecurringDetection({
   detectRecurring,
   confirmedRecurring,
+  categoryMap,
   hasData,
 }: RecurringDetectionProps) {
   const t = useT();
@@ -196,7 +205,7 @@ export function RecurringDetection({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {rec.category_id}
+                      {categoryMap.get(rec.category_id)?.name ?? "?"}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                       <span className="tabular-nums">{formatCurrency(rec.amount)}</span>
