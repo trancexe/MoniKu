@@ -165,7 +165,8 @@
       "linkSuccess": "Transaction linked to entry",
       "unlinkSuccess": "Transaction unlinked from entry",
       "unlinkFailed": "Failed to unlink transaction",
-      "loadFailed": "Failed to load data"
+      "loadFailed": "Failed to load data",
+      "savePayment": "Save Payment"
     },
     "list": {
       "viewDetail": "View Detail"

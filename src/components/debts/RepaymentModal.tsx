@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useT, useFormatLocale } from "@/lib/i18n";
 import { recalculateDebt } from "@/lib/debt-utils";
 import dayjs from "dayjs";
+import { CustomNumpad } from "@/components/transactions/CustomNumpad";
 import { X, Search } from "lucide-react";
 
 interface RepaymentModalProps {
@@ -77,8 +78,7 @@ export function RepaymentModal({ isOpen, onClose, debt }: RepaymentModalProps) {
     }
   }, [isOpen, activeTab, daysToLoad, debt.type, t]);
 
-  const handleNewPaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNewPaymentSubmit = async () => {
     if (isSubmitting) return;
 
     if (!selectedWallet) return toast.error(t("transaction.selectWallet"));
@@ -147,19 +147,19 @@ export function RepaymentModal({ isOpen, onClose, debt }: RepaymentModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4 animate-in fade-in duration-200">
-      <div className="w-full max-h-[90vh] overflow-y-auto bg-background sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl flex flex-col animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
-        <div className="sticky top-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-between p-4 border-b">
+      <div className="w-full max-h-[90vh] bg-background sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-lg shadow-black/5 dark:shadow-black/20 flex flex-col animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 ease-smooth">
+        <div className="sticky top-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-between p-4 border-b border-border/60">
           <h2 className="font-semibold text-lg">{t("debt.modal.title")}</h2>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onClose}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-colors duration-200 ease-smooth" onClick={onClose}>
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="p-4">
-          <div className="flex rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900 mb-6">
+        <div className="p-4 shrink-0">
+          <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900 mb-6">
             <button
               onClick={() => setActiveTab("new")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-200 ease-smooth ${
                 activeTab === "new" ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -167,28 +167,18 @@ export function RepaymentModal({ isOpen, onClose, debt }: RepaymentModalProps) {
             </button>
             <button
               onClick={() => setActiveTab("link")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-200 ease-smooth ${
                 activeTab === "link" ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t("debt.modal.tabLink")}
             </button>
           </div>
+        </div>
 
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
           {activeTab === "new" && (
-            <form onSubmit={handleNewPaymentSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">{t("debt.modal.amountLabel")}</label>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  className="w-full rounded-xl border bg-transparent p-3 text-sm outline-none focus:border-primary"
-                  value={amountStr}
-                  onChange={(e) => setAmountStr(e.target.value)}
-                />
-              </div>
-
+            <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">{t("transaction.date")}</label>
                 <input
@@ -211,7 +201,7 @@ export function RepaymentModal({ isOpen, onClose, debt }: RepaymentModalProps) {
                         type="button"
                         onClick={() => setSelectedWallet(w.id)}
                         aria-pressed={isSelected}
-                        className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${isSelected ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
+                        className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all duration-200 ease-smooth hover:bg-muted/50 active:scale-[0.98] ${isSelected ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
                       >
                         <span className="text-[11px] font-medium text-center line-clamp-2 w-full leading-tight">{w.name}</span>
                         <span className={`text-[10px] font-medium text-center line-clamp-1 w-full mt-0.5 ${isSelected ? 'text-primary/80' : 'text-muted-foreground'}`}>
@@ -233,13 +223,7 @@ export function RepaymentModal({ isOpen, onClose, debt }: RepaymentModalProps) {
                   placeholder={t("transaction.notesPlaceholder")}
                 />
               </div>
-
-              <div className="pt-2">
-                <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl">
-                  {t("common.save")}
-                </Button>
-              </div>
-            </form>
+            </div>
           )}
 
           {activeTab === "link" && (
@@ -278,6 +262,34 @@ export function RepaymentModal({ isOpen, onClose, debt }: RepaymentModalProps) {
             </div>
           )}
         </div>
+
+        {activeTab === "new" && (
+          <div className="shrink-0 border-t border-border/60 bg-background px-4 pt-2 pb-4">
+            <div className="text-center py-5 px-4 rounded-xl bg-muted/40 border border-border/40">
+              <span className="text-xs font-medium text-muted-foreground mb-1">
+                {t("transaction.amountLabel")}
+              </span>
+              <h2
+                aria-live="polite"
+                aria-atomic="true"
+                className={`text-3xl font-bold tracking-tight ${
+                  debt.type === "debt" ? "text-red-500" : "text-green-500"
+                }`}
+              >
+                {formatCurrencyRaw(parseInt(amountStr || "0", 10))}
+              </h2>
+            </div>
+            <CustomNumpad
+              value={amountStr}
+              onChange={setAmountStr}
+              onSubmit={handleNewPaymentSubmit}
+              disabled={isSubmitting}
+              submitLabel={t("debt.modal.savePayment")}
+              ariaLabelNumber={(n) => `${n}`}
+              ariaLabelDelete={t("common.delete")}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

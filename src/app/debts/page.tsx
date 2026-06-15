@@ -12,13 +12,11 @@ export default function DebtsPage() {
         <h1 className="text-3xl font-bold tracking-tight">{t("debt.title")}</h1>
         <p className="text-muted-foreground text-sm mt-1">{t("debt.pageSubtitle")}</p>
       </header>
-
       <section>
         <DebtForm />
       </section>
-
       <section className="border-t pt-8">
-        <h3 className="font-semibold mb-4">{t("debt.listTitle")}</h3>
+        <h3 className="font-semibold tracking-tight mb-4">{t("debt.listTitle")}</h3>
         <DebtList />
       </section>
     </div>

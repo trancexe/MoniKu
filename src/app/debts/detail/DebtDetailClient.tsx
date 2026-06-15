@@ -1,13 +1,14 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, Transaction } from "@/lib/db";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ChevronLeft, Trash2, ArrowUpRight, ArrowDownLeft, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useT, useFormatLocale } from "@/lib/i18n";
 import dayjs from "dayjs";
 import { RepaymentModal } from "@/components/debts/RepaymentModal";
+import { TransactionEditSheet } from "@/components/transactions/TransactionEditSheet";
 import { useState } from "react";
 import { toast } from "sonner";
 import { recalculateDebt } from "@/lib/debt-utils";
@@ -28,6 +29,8 @@ export function DebtDetailClient() {
   const { formatCurrencyRaw } = useFormatLocale();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const debt = useLiveQuery(() => {
     if (!id) return undefined;
@@ -176,7 +179,12 @@ export function DebtDetailClient() {
         ) : (
           <RevealStagger className="space-y-3">
             {linkedTransactions.map(tx => (
-              <div key={tx.id} className="rounded-xl border bg-card p-4 flex flex-col space-y-3">
+              <button
+                key={tx.id}
+                type="button"
+                onClick={() => { setSelectedTransaction(tx); setEditOpen(true); }}
+                className="w-full text-left rounded-xl border bg-card p-4 flex flex-col space-y-3 cursor-pointer hover:bg-accent/50 transition-colors"
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-semibold tabular-nums">{formatCurrencyRaw(tx.amount)}</p>
@@ -188,7 +196,7 @@ export function DebtDetailClient() {
                     variant="ghost"
                     size="sm"
                     className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 h-8"
-                    onClick={() => handleUnlink(tx.id)}
+                    onClick={(e) => { e.stopPropagation(); handleUnlink(tx.id); }}
                   >
                     {t("debt.detail.unlink")}
                   </Button>
@@ -198,7 +206,7 @@ export function DebtDetailClient() {
                     {tx.notes}
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </RevealStagger>
         )}
@@ -208,6 +216,13 @@ export function DebtDetailClient() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         debt={debt}
+      />
+
+      <TransactionEditSheet
+        transaction={selectedTransaction}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onUpdated={() => { if (id) void recalculateDebt(id); }}
       />
     </div>
   );

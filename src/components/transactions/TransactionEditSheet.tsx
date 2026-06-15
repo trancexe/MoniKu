@@ -22,12 +22,14 @@ interface TransactionEditSheetProps {
   transaction: Transaction | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUpdated?: () => void;
 }
 
 export function TransactionEditSheet({
   transaction,
   open,
   onOpenChange,
+  onUpdated,
 }: TransactionEditSheetProps) {
   const t = useT();
   const { formatCurrencyRaw } = useFormatLocale();
@@ -125,6 +127,7 @@ export function TransactionEditSheet({
       });
 
       toast.success(t("transaction.updated"));
+      onUpdated?.();
       onOpenChange(false);
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);

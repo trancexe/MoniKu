@@ -165,7 +165,8 @@
       "linkSuccess": "Transaksi terhubung ke catatan",
       "unlinkSuccess": "Transaksi diputuskan dari catatan",
       "unlinkFailed": "Gagal memutuskan transaksi",
-      "loadFailed": "Gagal memuat data"
+      "loadFailed": "Gagal memuat data",
+      "savePayment": "Simpan Pembayaran"
     },
     "list": {
       "viewDetail": "Lihat Detail"
