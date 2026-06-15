@@ -195,20 +195,24 @@ export function DailyHeatmap({ getDailyHeatmap, hasData }: DailyHeatmapProps) {
                         }
                       }}
                       onPointerLeave={() => setTooltip(null)}
-                      onClick={() => {
+                      onClick={(e) => {
                         if (day && tooltip?.day === day) setTooltip(null);
                         else if (day) {
-                          const rect = (
-                            document.querySelector(`[aria-label*="${day.date}"]`) as HTMLElement | null
-                          )?.getBoundingClientRect();
-                          if (rect) {
-                            const parent = document.getElementById("analytics-heatmap")?.getBoundingClientRect();
-                            setTooltip({
-                              day,
-                              x: rect.left - (parent?.left || 0),
-                              y: rect.top - (parent?.top || 0),
-                            });
-                          }
+                          // Use the clicked button's own rect instead of
+                          // re-querying the DOM. The previous code
+                          // interpolated day.date into a CSS attribute
+                          // selector, which broke the lookup when day.date
+                          // happened to substring-match a different
+                          // cell's aria-label (and would have been a
+                          // CSS-injection vector if the value were ever
+                          // user-controlled).
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const parent = document.getElementById("analytics-heatmap")?.getBoundingClientRect();
+                          setTooltip({
+                            day,
+                            x: rect.left - (parent?.left || 0),
+                            y: rect.top - (parent?.top || 0),
+                          });
                         }
                       }}
                     />
