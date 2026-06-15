@@ -36,7 +36,27 @@ export async function hashPin(pin: string, saltHex: string): Promise<string> {
   return hashHex;
 }
 
+/**
+ * Constant-time string comparison. Prevents timing side-channel attacks
+ * by always touching every character regardless of where the first
+ * mismatch occurs. Both inputs must be of equal length.
+ *
+ * Use for comparing any secret-derived value (PIN hash, token, etc).
+ * Do NOT use for general string equality — the early-exit behaviour of
+ * `===` is faster and just as safe for non-secret comparisons.
+ */
+function constantTimeEqual(a: string, b: string): boolean {
+  // Length check itself can leak length, but the lengths of PIN hashes
+  // and salts are public (fixed 64/32 hex chars), so this is safe.
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 export async function verifyPin(pin: string, saltHex: string, storedHash: string): Promise<boolean> {
   const hash = await hashPin(pin, saltHex);
-  return hash === storedHash;
+  return constantTimeEqual(hash, storedHash);
 }
