@@ -10,7 +10,9 @@
     "loading": "Loading...",
     "loadingData": "Preparing data...",
     "error": "An error occurred",
-    "retry": "Retry"
+    "retry": "Retry",
+    "initErrorTitle": "Failed to start app",
+    "initErrorDesc": "The local database could not be initialized. Try again, or clear app data if the issue persists."
   },
   "nav": {
     "home": "Home",

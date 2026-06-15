@@ -10,7 +10,9 @@
     "loading": "Memuat...",
     "loadingData": "Menyiapkan data...",
     "error": "Terjadi kesalahan",
-    "retry": "Coba lagi"
+    "retry": "Coba lagi",
+    "initErrorTitle": "Gagal memulai aplikasi",
+    "initErrorDesc": "Database lokal tidak dapat disiapkan. Coba lagi, atau hapus data aplikasi jika masalah berlanjut."
   },
   "nav": {
     "home": "Beranda",
