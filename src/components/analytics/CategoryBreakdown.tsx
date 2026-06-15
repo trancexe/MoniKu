@@ -138,7 +138,7 @@ export function CategoryBreakdown({ getCategoryBreakdown, hasData }: CategoryBre
             role="img"
             aria-label={`Category breakdown pie chart for ${type}`}
           >
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <PieChart>
                 <Pie
                   data={data}

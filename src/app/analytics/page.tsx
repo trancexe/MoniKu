@@ -75,35 +75,31 @@ export default function AnalyticsPage() {
         <InsightCards getInsights={analytics.getInsights} hasData={hasData} />
 
         {/* Top row: Saving Rate + Forecast */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* §3.7 Saving Rate Gauge */}
-          <SavingRateGauge
-            getSavingRate={analytics.getSavingRate}
-            hasData={hasData}
-          />
+        {/* §3.7 Saving Rate Gauge */}
+        <SavingRateGauge
+          getSavingRate={analytics.getSavingRate}
+          hasData={hasData}
+        />
 
-          {/* §3.8 Cash Flow Forecast */}
-          <CashFlowForecast
-            getForecast={analytics.getForecast}
-            monthlyDataLength={analytics.monthlyData.length}
-            hasData={hasData}
-          />
-        </div>
+        {/* §3.8 Cash Flow Forecast */}
+        <CashFlowForecast
+          getForecast={analytics.getForecast}
+          monthlyDataLength={analytics.monthlyData.length}
+          hasData={hasData}
+        />
 
         {/* Charts row: Cash Flow + Category side-by-side on desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* §3.1 Cash Flow Trend */}
-          <CashFlowChart
-            getCashFlowData={analytics.getCashFlowData}
-            hasData={hasData}
-          />
+        {/* §3.1 Cash Flow Trend */}
+        <CashFlowChart
+          getCashFlowData={analytics.getCashFlowData}
+          hasData={hasData}
+        />
 
-          {/* §3.2 Category Breakdown */}
-          <CategoryBreakdown
-            getCategoryBreakdown={analytics.getCategoryBreakdown}
-            hasData={hasData}
-          />
-        </div>
+        {/* §3.2 Category Breakdown */}
+        <CategoryBreakdown
+          getCategoryBreakdown={analytics.getCategoryBreakdown}
+          hasData={hasData}
+        />
 
         {/* §3.4 Month-over-Month Compare */}
         <MonthCompare
