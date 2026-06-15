@@ -7,6 +7,13 @@ interface CustomNumpadProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  /**
+   * Disables the submit button. Number keys remain active so the user
+   * can correct a typo while a submit is in flight, but the submit
+   * action is blocked at both the click and the parent guard. Use to
+   * prevent double-submit on slow Dexie transactions.
+   */
+  disabled?: boolean;
   submitLabel?: string;
   /** Function to compute aria-label for a digit key (e.g. "1", "2", or "1" / "one" for i18n) */
   ariaLabelNumber?: (n: string) => string;
@@ -14,7 +21,7 @@ interface CustomNumpadProps {
   ariaLabelDelete?: string;
 }
 
-export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan Transaksi", ariaLabelNumber, ariaLabelDelete }: CustomNumpadProps) {
+export function CustomNumpad({ value, onChange, onSubmit, disabled = false, submitLabel = "Simpan Transaksi", ariaLabelNumber, ariaLabelDelete }: CustomNumpadProps) {
   const t = useT();
   const handlePress = (key: string) => {
     if (value === "0" && key !== "0") {
@@ -79,7 +86,9 @@ export function CustomNumpad({ value, onChange, onSubmit, submitLabel = "Simpan 
       <button
         type="button"
         onClick={onSubmit}
-        className="col-span-3 mt-2 flex h-12 sm:h-14 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+        disabled={disabled}
+        aria-busy={disabled}
+        className="col-span-3 mt-2 flex h-12 sm:h-14 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
       >
         {submitLabel}
       </button>

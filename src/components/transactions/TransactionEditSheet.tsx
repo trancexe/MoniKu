@@ -46,6 +46,12 @@ export function TransactionEditSheet({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isWarningOpen, setIsWarningOpen] = useState(false);
   const [pendingTransaction, setPendingTransaction] = useState<{ amount: number, notes: string } | null>(null);
+  // Re-entrancy guard — see TransactionForm for the rationale. The
+  // edit path is more dangerous than create because a double-submit
+  // can compound the wallet reversal (line 80-88 already debits the
+  // old wallet before crediting the new one), so the second click
+  // would re-reverse the already-reversed balance.
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const categories = useLiveQuery(() =>
@@ -72,7 +78,8 @@ export function TransactionEditSheet({
   }
 
   const executeUpdate = async (amount: number, parsedNotes: string) => {
-    if (!transaction) return;
+    if (!transaction || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await db.transaction("rw", db.transactions, db.wallets, async () => {
         const oldWallet = await db.wallets.get(transaction.wallet_id);
@@ -123,13 +130,14 @@ export function TransactionEditSheet({
       if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error(t("transaction.saveFailed"));
     } finally {
+      setIsSubmitting(false);
       setIsWarningOpen(false);
       setPendingTransaction(null);
     }
   };
 
   const handleUpdate = async () => {
-    if (!transaction) return;
+    if (!transaction || isSubmitting) return;
 
     const rawAmount = parseInt(amountStr, 10);
     const transactionSchema = makeSchema();
@@ -342,6 +350,7 @@ export function TransactionEditSheet({
                   value={amountStr}
                   onChange={setAmountStr}
                   onSubmit={handleUpdate}
+                  disabled={isSubmitting}
                   submitLabel={t("transaction.updateTransaction")}
                   ariaLabelNumber={(n) => `${n}`}
                   ariaLabelDelete={t("common.delete")}
@@ -375,10 +384,10 @@ export function TransactionEditSheet({
               {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={() => {
-              if (pendingTransaction) {
+              if (pendingTransaction && !isSubmitting) {
                 executeUpdate(pendingTransaction.amount, pendingTransaction.notes);
               }
-            }}>
+            }} disabled={isSubmitting}>
               {t("transaction.continue")}
             </Button>
           </DialogFooter>

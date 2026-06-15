@@ -12,6 +12,9 @@ export function DebtForm() {
   const [type, setType] = useState<'debt' | 'loan'>('debt');
   const [personName, setPersonName] = useState("");
   const [amountStr, setAmountStr] = useState("");
+  // Re-entrancy guard — see TransactionForm. Prevents the same debt
+  // from being saved twice on a fast double-tap.
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const makeSchema = () => z.object({
     personName: z.string().min(1, t("validation.nameRequired")).max(100, t("validation.nameMax")),
@@ -20,6 +23,7 @@ export function DebtForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     const rawAmount = parseInt(amountStr, 10);
     const debtSchema = makeSchema();
     const parsed = debtSchema.safeParse({ personName, amount: rawAmount });
@@ -29,6 +33,7 @@ export function DebtForm() {
 
     const amount = parsed.data.amount;
 
+    setIsSubmitting(true);
     try {
       await db.debt_loans.add({
         id: crypto.randomUUID(),
@@ -44,6 +49,8 @@ export function DebtForm() {
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error(t("debt.saveFailed"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -92,7 +99,7 @@ export function DebtForm() {
         />
       </div>
 
-      <Button type="submit" className="w-full rounded-full py-6 text-sm font-semibold active:scale-[0.98] transition-transform">{t("debt.save")}</Button>
+      <Button type="submit" disabled={isSubmitting} className="w-full rounded-full py-6 text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed">{t("debt.save")}</Button>
     </form>
   );
 }

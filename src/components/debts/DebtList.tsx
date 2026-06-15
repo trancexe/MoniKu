@@ -16,10 +16,18 @@ export function DebtList() {
   const debts = useLiveQuery(() => db.debt_loans.toArray());
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const [selectedWallet, setSelectedWallet] = useState<string>("");
+  // Re-entrancy guard — see TransactionForm. Tracks the debt id
+  // currently being repaid so the user cannot repay the same debt
+  // twice on a fast double-tap. Distinct from `isSubmitting` for
+  // single forms because DebtList renders one button per debt and
+  // we only want to block the one in flight.
+  const [repayInFlight, setRepayInFlight] = useState<string | null>(null);
 
   const handleRepay = async (debtId: string, remainingAmount: number, type: 'debt' | 'loan') => {
     if (!selectedWallet) return toast.error(t("debt.selectWalletFirst"));
+    if (repayInFlight) return;
 
+    setRepayInFlight(debtId);
     try {
       await db.transaction('rw', db.transactions, db.wallets, db.debt_loans, async () => {
         const wallet = await db.wallets.get(selectedWallet);
@@ -57,6 +65,8 @@ export function DebtList() {
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error(t("debt.repayFailed"));
+    } finally {
+      setRepayInFlight(null);
     }
   };
 
@@ -108,7 +118,9 @@ export function DebtList() {
               {debt.status === 'active' ? (
                 <Button
                   onClick={() => handleRepay(debt.id, debt.remaining_amount, debt.type)}
-                  className="w-full tabular-nums active:scale-[0.98] transition-transform"
+                  disabled={repayInFlight !== null}
+                  aria-busy={repayInFlight === debt.id}
+                  className="w-full tabular-nums active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {t("debt.repay")} ({formatCurrencyRaw(debt.remaining_amount)})
                 </Button>

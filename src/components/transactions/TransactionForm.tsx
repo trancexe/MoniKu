@@ -74,6 +74,14 @@ export function TransactionForm() {
 
   const [isWarningOpen, setIsWarningOpen] = useState(false);
   const [pendingTransaction, setPendingTransaction] = useState<{ amount: number, notes: string } | null>(null);
+  // Re-entrancy guard: Dexie transactions are async and take a few ms
+  // to commit. Without this, a fast double-tap of the submit button
+  // (or button mashing on the CustomNumpad) queues two transactions
+  // and the wallet balance gets debited twice. The guard is set at the
+  // top of both entry points (handleSubmit + the negative-balance
+  // confirm button) and cleared in `finally`, so a rejected submit
+  // does not leave the form stuck.
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const categories = useLiveQuery(() =>
@@ -81,6 +89,8 @@ export function TransactionForm() {
   , [type]);
 
   const executeTransaction = async (amount: number, parsedNotes: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await db.transaction('rw', db.transactions, db.wallets, async () => {
         const currentWallet = await db.wallets.get(walletId);
@@ -119,12 +129,14 @@ export function TransactionForm() {
       if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error(t("transaction.saveFailed"));
     } finally {
+      setIsSubmitting(false);
       setIsWarningOpen(false);
       setPendingTransaction(null);
     }
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     const rawAmount = parseInt(amountStr, 10);
     const transactionSchema = makeSchema();
 
@@ -295,6 +307,7 @@ export function TransactionForm() {
             value={amountStr}
             onChange={setAmountStr}
             onSubmit={handleSubmit}
+            disabled={isSubmitting}
             submitLabel={t("transaction.saveTransaction")}
             ariaLabelNumber={(n) => `${n}`}
             ariaLabelDelete={t("common.delete")}
@@ -318,10 +331,10 @@ export function TransactionForm() {
               {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={() => {
-              if (pendingTransaction) {
+              if (pendingTransaction && !isSubmitting) {
                 executeTransaction(pendingTransaction.amount, pendingTransaction.notes);
               }
-            }}>
+            }} disabled={isSubmitting}>
               {t("transaction.continue")}
             </Button>
           </DialogFooter>
