@@ -269,6 +269,9 @@
   "theme": {
     "title": "Theme",
     "desc": "Customize the app theme to your preference.",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
     "darkModeLabel": "Dark Mode",
     "darkModeDesc": "Switch to dark appearance.",
     "systemLabel": "Follow System",

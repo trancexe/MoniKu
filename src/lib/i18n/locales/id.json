@@ -269,6 +269,9 @@
   "theme": {
     "title": "Tema",
     "desc": "Sesuaikan tema aplikasi sesuai preferensi Anda.",
+    "light": "Terang",
+    "dark": "Gelap",
+    "system": "Sistem",
     "darkModeLabel": "Mode Gelap (Dark Mode)",
     "darkModeDesc": "Beralih ke tampilan gelap.",
     "systemLabel": "Ikuti Sistem",
