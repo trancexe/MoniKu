@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { db, Wallet, Category, Transaction, DebtLoan } from "./db";
+import { db, Wallet, Category, Transaction, DebtLoan, RecurringTransaction } from "./db";
 
 /**
  * Zod schemas aligned 1:1 with the Dexie interfaces in `lib/db.ts`.
@@ -61,11 +61,34 @@ const debtLoanSchema = z.object({
   updated_at: z.number().optional(),
 }) satisfies z.ZodType<DebtLoan>;
 
+const recurringTransactionSchema = z.object({
+  id: z.string(),
+  user_pattern_key: z.string(),
+  wallet_id: z.string(),
+  category_id: z.string(),
+  amount: z.number(),
+  amount_variance: z.number(),
+  frequency: z.enum(["daily", "weekly", "monthly", "quarterly", "yearly"]),
+  avg_interval_days: z.number(),
+  last_occurrence_date: z.number(),
+  next_expected_date: z.number(),
+  status: z.enum(["detected", "confirmed", "dismissed"]),
+  detected_at: z.number(),
+  confirmed_at: z.number().optional(),
+}) satisfies z.ZodType<RecurringTransaction>;
+
 const backupSchema = z.object({
   wallets: z.array(walletSchema).optional(),
   categories: z.array(categorySchema).optional(),
   transactions: z.array(transactionSchema).optional(),
   debt_loans: z.array(debtLoanSchema).optional(),
+  /**
+   * Added in backup v2. Optional in the schema so that v1 backups
+   * (which pre-date this field) still parse — they just won't carry
+   * any recurring patterns. A v2 app restoring a v1 backup will end
+   * up with no recurring patterns, matching the source.
+   */
+  recurring_transactions: z.array(recurringTransactionSchema).optional(),
   exportDate: z.number().optional(),
   version: z.number().optional(),
 });
@@ -90,8 +113,9 @@ export async function exportAllData() {
     categories: await db.categories.toArray(),
     transactions: await db.transactions.toArray(),
     debt_loans: await db.debt_loans.toArray(),
+    recurring_transactions: await db.recurring_transactions.toArray(),
     exportDate: Date.now(),
-    version: 1,
+    version: 2,
   };
   return data;
 }
@@ -106,18 +130,19 @@ export async function importAllData(data: Record<string, unknown>) {
   const validData = parsedData.data;
 
   // 2. Perform clear and insert atomically
+  // Dexie's transaction() has overloads up to 5 tables; for 6+ we
+  // pass the tables as an array (same runtime behavior, signature-
+  // compatible with all Dexie versions).
   return await db.transaction(
     "rw",
-    db.wallets,
-    db.categories,
-    db.transactions,
-    db.debt_loans,
+    [db.wallets, db.categories, db.transactions, db.debt_loans, db.recurring_transactions],
     async () => {
       // Clear existing data
       await db.wallets.clear();
       await db.categories.clear();
       await db.transactions.clear();
       await db.debt_loans.clear();
+      await db.recurring_transactions.clear();
 
       // Insert new data. `as` cast is safe here because the Zod
       // schemas are typed against the Dexie interfaces via `satisfies`.
@@ -125,6 +150,9 @@ export async function importAllData(data: Record<string, unknown>) {
       if (validData.categories?.length) await db.categories.bulkAdd(validData.categories as Category[]);
       if (validData.transactions?.length) await db.transactions.bulkAdd(validData.transactions as Transaction[]);
       if (validData.debt_loans?.length) await db.debt_loans.bulkAdd(validData.debt_loans as DebtLoan[]);
+      if (validData.recurring_transactions?.length) {
+        await db.recurring_transactions.bulkAdd(validData.recurring_transactions as RecurringTransaction[]);
+      }
     }
   );
 }
