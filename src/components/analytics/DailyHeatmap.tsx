@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useLayoutEffect } from "react";
 import { AnalyticsCard, AnalyticsEmpty, PeriodToggle } from "./AnalyticsCard";
 import { useT, useFormatLocale } from "@/lib/i18n";
 import { DailyAggregate } from "@/lib/analytics/useAnalyticsData";
@@ -50,8 +50,20 @@ export function DailyHeatmap({ getDailyHeatmap, hasData }: DailyHeatmapProps) {
     y: number;
   } | null>(null);
 
-  // Responsive: 12 weeks on desktop, 8 on mobile
-  const weeksCount = typeof window !== "undefined" && window.innerWidth < 640 ? 8 : 12;
+  // Responsive: track viewport width via ResizeObserver (matches the
+  // AGENTS.md "fixed-bottom UI" rule). Initial state assumes the wider
+  // layout so the first render uses the larger week/cell sizes; the
+  // layout effect then updates synchronously before paint, so there is
+  // no visible flash on mount or on rotation/resize.
+  const [isNarrow, setIsNarrow] = useState(false);
+  useLayoutEffect(() => {
+    const update = () => setIsNarrow(window.innerWidth < 640);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, []);
+  const weeksCount = isNarrow ? 8 : 12;
 
   const { days, percentile90 } = useMemo(
     () => getDailyHeatmap(weeksCount, mode),
@@ -94,7 +106,7 @@ export function DailyHeatmap({ getDailyHeatmap, hasData }: DailyHeatmapProps) {
     );
   }
 
-  const cellSize = typeof window !== "undefined" && window.innerWidth < 640 ? 28 : 24;
+  const cellSize = isNarrow ? 28 : 24;
   const gap = 3;
 
   return (
