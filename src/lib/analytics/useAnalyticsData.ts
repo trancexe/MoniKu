@@ -164,8 +164,14 @@ export function useAnalyticsData() {
 
     const filtered = transactions.filter((t) => {
       if (t.type !== type) return false;
-      if (fromDate && t.date < fromDate) return false;
-      if (toDate && t.date > toDate) return false;
+      // Explicit null check, not truthiness. The `number | null`
+      // type allows 0 (Unix epoch) as a legitimate value, and
+      // `if (0)` would silently skip the filter — for the
+      // CategoryBreakdown "all" preset this is irrelevant (it
+      // passes null), but other callers could conceivably pass a
+      // date that happens to land at the epoch.
+      if (fromDate !== null && t.date < fromDate) return false;
+      if (toDate !== null && t.date > toDate) return false;
       return true;
     });
 

@@ -21,7 +21,11 @@ export function AppLock() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (lockoutUntil && Date.now() < lockoutUntil) {
+    // Explicit null check, not truthiness. lockoutUntil is
+    // `number | null` and a stale state of 0 (which shouldn't occur
+    // in practice but is theoretically reachable) would silently
+    // skip the lockout branch.
+    if (lockoutUntil !== null && Date.now() < lockoutUntil) {
       setTimeout(() => {
         setLockoutTimeLeft(Math.ceil((lockoutUntil - Date.now()) / 1000));
       }, 0);
