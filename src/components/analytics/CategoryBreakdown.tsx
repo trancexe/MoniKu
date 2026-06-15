@@ -99,6 +99,7 @@ export function CategoryBreakdown({ getCategoryBreakdown, hasData }: CategoryBre
       <div className="flex gap-1 mb-4">
         <button
           type="button"
+          aria-pressed={type === "expense"}
           onClick={() => setType("expense")}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
             type === "expense"
@@ -110,6 +111,7 @@ export function CategoryBreakdown({ getCategoryBreakdown, hasData }: CategoryBre
         </button>
         <button
           type="button"
+          aria-pressed={type === "income"}
           onClick={() => setType("income")}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
             type === "income"

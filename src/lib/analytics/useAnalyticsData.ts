@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction, Category, RecurringTransaction } from "@/lib/db";
 import dayjs from "dayjs";
@@ -130,7 +130,7 @@ export function useAnalyticsData() {
     );
   }, [transactions]);
 
-  const getCashFlowData = (months: 6 | 12): MonthlyAggregate[] => {
+  const getCashFlowData = useCallback((months: 6 | 12): MonthlyAggregate[] => {
     if (monthlyData.length === 0) return [];
     const now = dayjs();
     const result: MonthlyAggregate[] = [];
@@ -151,11 +151,11 @@ export function useAnalyticsData() {
       );
     }
     return result;
-  };
+  }, [monthlyData]);
 
   // ─── Category Breakdown (§3.2) ───────────────────────────────
 
-  const getCategoryBreakdown = (
+  const getCategoryBreakdown = useCallback((
     type: "income" | "expense",
     fromDate: number | null,
     toDate: number | null
@@ -210,11 +210,11 @@ export function useAnalyticsData() {
       type,
     });
     return top5;
-  };
+  }, [transactions, categoryMap]);
 
   // ─── Daily Heatmap (§3.3) ────────────────────────────────────
 
-  const getDailyHeatmap = (
+  const getDailyHeatmap = useCallback((
     weeksCount: number,
     mode: "expense" | "income" | "net"
   ): { days: DailyAggregate[]; maxValue: number; percentile90: number } => {
@@ -267,11 +267,11 @@ export function useAnalyticsData() {
     const percentile90 = values.length > 0 ? values[Math.min(p90Index, values.length - 1)] : 0;
 
     return { days, maxValue, percentile90 };
-  };
+  }, [transactions]);
 
   // ─── Month-over-Month Compare (§3.4) ─────────────────────────
 
-  const getMonthComparison = (): {
+  const getMonthComparison = useCallback((): {
     rows: MoMRow[];
     currentTotal: number;
     previousTotal: number;
@@ -336,11 +336,11 @@ export function useAnalyticsData() {
 
     rows.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
     return { rows, currentTotal, previousTotal };
-  };
+  }, [transactions, categoryMap]);
 
   // ─── Insights (§3.5) ─────────────────────────────────────────
 
-  const getInsights = (): InsightItem[] => {
+  const getInsights = useCallback((): InsightItem[] => {
     if (!transactions || transactions.length === 0) return [];
 
     const insights: InsightItem[] = [];
@@ -467,11 +467,11 @@ export function useAnalyticsData() {
     }
 
     return insights.sort((a, b) => b.severity - a.severity).slice(0, 3);
-  };
+  }, [transactions, categoryMap, monthlyData]);
 
   // ─── Saving Rate (§3.7) ──────────────────────────────────────
 
-  const getSavingRate = () => {
+  const getSavingRate = useCallback(() => {
     if (!transactions) return { rate: null, income: 0, expense: 0, saved: 0, avg3m: null, sparkline: [] };
 
     const now = dayjs();
@@ -522,11 +522,11 @@ export function useAnalyticsData() {
     }
 
     return { rate, income, expense, saved, avg3m, sparkline };
-  };
+  }, [transactions]);
 
   // ─── Forecast (§3.8) ─────────────────────────────────────────
 
-  const getForecast = () => {
+  const getForecast = useCallback(() => {
     if (!transactions || !wallets || !recurringRecords)
       return { balance: 0, income: 0, expense: 0, remainingDays: 0, confidence: "low" as const, upcoming: [] as Array<{ name: string; amount: number; date: string }> };
 
@@ -592,11 +592,11 @@ export function useAnalyticsData() {
       confidence,
       upcoming: upcoming.sort((a, b) => a.date.localeCompare(b.date)),
     };
-  };
+  }, [transactions, wallets, recurringRecords, monthlyData, categoryMap]);
 
   // ─── Recurring Detection (§3.6) ──────────────────────────────
 
-  const detectRecurring = (): RecurringPattern[] => {
+  const detectRecurring = useCallback((): RecurringPattern[] => {
     if (!transactions || transactions.length < 3) return [];
 
     // Group transactions by normalized key: wallet_id + category_id + amount_bucket
@@ -679,7 +679,7 @@ export function useAnalyticsData() {
     }
 
     return patterns.sort((a, b) => b.confidence - a.confidence || b.occurrences - a.occurrences);
-  };
+  }, [transactions, recurringRecords, categoryMap]);
 
   return {
     isLoading,

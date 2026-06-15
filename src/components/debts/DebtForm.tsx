@@ -76,8 +76,9 @@ export function DebtForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-medium text-zinc-500">{t("debt.personName")}</label>
+        <label htmlFor="personName" className="text-xs font-medium text-zinc-500">{t("debt.personName")}</label>
         <input
+          id="personName"
           type="text"
           required
           className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
@@ -87,8 +88,9 @@ export function DebtForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-medium text-zinc-500">{t("debt.amount")}</label>
+        <label htmlFor="amountStr" className="text-xs font-medium text-zinc-500">{t("debt.amount")}</label>
         <input
+          id="amountStr"
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"

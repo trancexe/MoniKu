@@ -69,6 +69,7 @@ export function PeriodToggle({
         <button
           key={opt.value}
           type="button"
+          aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
             value === opt.value

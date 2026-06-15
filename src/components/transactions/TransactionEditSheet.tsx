@@ -224,9 +224,9 @@ export function TransactionEditSheet({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <div className="text-xs font-medium text-muted-foreground">
                       {t("transaction.typeCategory")}
-                    </label>
+                    </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {categories?.map((c) => {
                         const CatIcon = (Icons[c.icon as keyof typeof Icons] ||
@@ -255,9 +255,9 @@ export function TransactionEditSheet({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <div className="text-xs font-medium text-muted-foreground">
                       {t("transaction.typeWallet")}
-                    </label>
+                    </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {wallets?.map((w) => {
                         const WalIcon = (Icons[w.icon as keyof typeof Icons] ||
@@ -294,10 +294,11 @@ export function TransactionEditSheet({
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-zinc-500">
+                      <label htmlFor="editTransactionDate" className="text-xs font-medium text-zinc-500">
                         {t("transaction.date")}
                       </label>
                       <input
+                        id="editTransactionDate"
                         type="datetime-local"
                         className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
                         value={transactionDate}
@@ -305,10 +306,11 @@ export function TransactionEditSheet({
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-zinc-500">
+                      <label htmlFor="editTransactionNotes" className="text-xs font-medium text-zinc-500">
                         {t("transaction.notes")}
                       </label>
                       <input
+                        id="editTransactionNotes"
                         type="text"
                         className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
                         placeholder={t("transaction.notesPlaceholder")}

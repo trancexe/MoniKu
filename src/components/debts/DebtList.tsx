@@ -85,9 +85,9 @@ export function DebtList() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border bg-card p-4">
-        <label className="text-xs font-medium text-muted-foreground block mb-2">{t("debt.selectWallet")}</label>
+        <label htmlFor="walletSelect" className="text-xs font-medium text-muted-foreground block mb-2">{t("debt.selectWallet")}</label>
         <Select value={selectedWallet} onValueChange={(val) => { if (val !== null) setSelectedWallet(val); }}>
-          <SelectTrigger>
+          <SelectTrigger id="walletSelect">
             <SelectValue placeholder={t("debt.selectWalletPlaceholder")} />
           </SelectTrigger>
           <SelectContent>

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { AnalyticsCard, AnalyticsEmpty } from "./AnalyticsCard";
-import { useT, useFormatLocale } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 import { abbreviateIDR } from "@/lib/analytics/useAnalyticsData";
 import {
   Target,

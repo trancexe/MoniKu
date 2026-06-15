@@ -218,7 +218,7 @@ export function TransactionForm() {
           {/* Quick Pickers */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">{t("transaction.typeCategory")}</label>
+              <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeCategory")}</div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
                 {categories?.map(c => {
                   const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
@@ -240,7 +240,7 @@ export function TransactionForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">{t("transaction.typeWallet")}</label>
+              <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeWallet")}</div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
                 {wallets?.map(w => {
                   const Icon = (Icons[w.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
@@ -267,8 +267,9 @@ export function TransactionForm() {
 
           <div className="space-y-4 px-2">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-zinc-500">{t("transaction.date")}</label>
+              <label htmlFor="transactionDate" className="text-xs font-medium text-zinc-500">{t("transaction.date")}</label>
               <input
+                id="transactionDate"
                 type="datetime-local"
                 className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
                 value={transactionDate}
@@ -277,8 +278,9 @@ export function TransactionForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-zinc-500">{t("transaction.notes")}</label>
+              <label htmlFor="transactionNotes" className="text-xs font-medium text-zinc-500">{t("transaction.notes")}</label>
               <input
+                id="transactionNotes"
                 type="text"
                 className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
                 placeholder={t("transaction.notesPlaceholder")}
