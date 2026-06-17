@@ -44,7 +44,7 @@ export function ThemeSettings() {
       <div
         role="radiogroup"
         aria-label={t("theme.title")}
-        className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900"
+        className="rounded-lg border p-1 shadow-sm grid grid-cols-3 gap-1"
       >
         {THEME_OPTIONS.map((opt) => {
           const isSelected = theme === opt.value;
@@ -55,10 +55,10 @@ export function ThemeSettings() {
               role="radio"
               aria-checked={isSelected}
               onClick={() => setTheme(opt.value)}
-              className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all active:scale-[0.98] ${
+              className={`flex flex-1 items-center justify-center rounded-md py-2.5 px-3 text-sm font-medium transition-all active:scale-[0.98] ${
                 isSelected
-                  ? "bg-white shadow text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
-                  : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               {t(opt.labelKey)}

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { CustomNumpad } from "@/components/transactions/CustomNumpad";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import dayjs from "dayjs";
 
 export function DebtForm() {
@@ -143,15 +143,16 @@ export function DebtForm() {
             setTempAmountStr(amountStr || "0");
             setAmountModalOpen(true);
           }}
-          className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 text-left transition-all duration-200 ease-smooth hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-muted/30 active:scale-[0.99]"
+          className="group w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-left shadow-sm transition-all duration-300 ease-smooth hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-md active:scale-[0.98]"
         >
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-center justify-between">
             <span className={`text-3xl font-bold tracking-tight tabular-nums ${type === 'debt' ? 'text-red-500' : 'text-green-500'}`}>
               {formatCurrencyRaw(parseInt(amountStr || "0", 10))}
             </span>
-            <span className="text-xs text-muted-foreground">
-              {amountStr && amountStr !== "0" ? "Ubah" : "Pilih nominal"}
-            </span>
+            <div className="flex items-center gap-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:text-foreground">
+              <span>{amountStr && amountStr !== "0" ? "Ubah" : "Pilih nominal"}</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </div>
           </div>
         </button>
       </div>
@@ -163,6 +164,13 @@ export function DebtForm() {
           type="datetime-local"
           className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors duration-200 ease-smooth"
           value={date}
+          onClick={(e) => {
+            try {
+              e.currentTarget.showPicker();
+            } catch {
+              // Ignore if showPicker is not supported
+            }
+          }}
           onChange={(e) => setDate(e.target.value)}
         />
       </div>

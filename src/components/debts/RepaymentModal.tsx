@@ -37,8 +37,10 @@ export function RepaymentModal({ isOpen, onClose, debt }: RepaymentModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      queueMicrotask(() => setAmountStr(debt.remaining_amount.toString()));
-      setDate(dayjs().format("YYYY-MM-DDTHH:mm"));
+      queueMicrotask(() => {
+        setAmountStr(debt.remaining_amount.toString());
+        setDate(dayjs().format("YYYY-MM-DDTHH:mm"));
+      });
       db.wallets.toArray().then(setWallets);
     }
   }, [isOpen, debt.remaining_amount]);

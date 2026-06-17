@@ -227,12 +227,21 @@ export function TransactionForm() {
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => setCategoryId(c.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCategoryId(c.id);
+                      }}
                       aria-pressed={isSelected}
-                      className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${isSelected ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
+                      className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all duration-300 active:scale-[0.96] ${
+                        isSelected 
+                          ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background' 
+                          : 'border-border/50 bg-card text-muted-foreground hover:bg-muted/50 hover:border-border'
+                      }`}
                     >
-                      <Icon className="h-5 w-5 mb-1" />
-                      <span className="text-[11px] font-medium text-center line-clamp-1 w-full">{c.name}</span>
+                      <Icon className={`h-5 w-5 mb-1.5 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
+                      <span className={`text-[11px] font-medium text-center line-clamp-1 w-full ${isSelected ? 'opacity-100 font-semibold' : 'opacity-70'}`}>
+                        {c.name}
+                      </span>
                     </button>
                   );
                 })}
@@ -249,13 +258,22 @@ export function TransactionForm() {
                     <button
                       key={w.id}
                       type="button"
-                      onClick={() => setWalletId(w.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setWalletId(w.id);
+                      }}
                       aria-pressed={isSelected}
-                      className={`flex flex-col items-center justify-center rounded-xl border p-2 transition-all hover:bg-muted/50 active:scale-[0.98] ${isSelected ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20' : 'bg-card text-muted-foreground'}`}
+                      className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all duration-300 active:scale-[0.96] ${
+                        isSelected 
+                          ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background' 
+                          : 'border-border/50 bg-card text-muted-foreground hover:bg-muted/50 hover:border-border'
+                      }`}
                     >
-                      <Icon className="h-5 w-5 mb-1" />
-                      <span className="text-[11px] font-medium text-center line-clamp-2 w-full leading-tight">{w.name}</span>
-                      <span className={`text-[10px] font-medium text-center line-clamp-2 w-full mt-0.5 ${isSelected ? 'text-primary/80' : 'text-muted-foreground'}`}>
+                      <Icon className={`h-5 w-5 mb-1.5 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
+                      <span className={`text-[11px] font-medium text-center line-clamp-2 w-full leading-tight ${isSelected ? 'opacity-100 font-semibold' : 'opacity-70'}`}>
+                        {w.name}
+                      </span>
+                      <span className={`text-[10px] font-medium text-center line-clamp-2 w-full mt-0.5 ${isSelected ? 'opacity-90' : 'opacity-50'}`}>
                         {formatCurrencyRaw(w.current_balance)}
                       </span>
                     </button>
@@ -273,6 +291,13 @@ export function TransactionForm() {
                 type="datetime-local"
                 className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:focus:border-zinc-600 transition-colors"
                 value={transactionDate}
+                onClick={(e) => {
+                  try {
+                    e.currentTarget.showPicker();
+                  } catch {
+                    // Ignore if showPicker is not supported
+                  }
+                }}
                 onChange={(e) => setTransactionDate(e.target.value)}
               />
             </div>
