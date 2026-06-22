@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { X, ChevronRight } from "lucide-react";
 import dayjs from "dayjs";
 
-export function DebtForm() {
+export function DebtForm({ onSuccess }: { onSuccess?: () => void }) {
   const t = useT();
   const { formatCurrencyRaw } = useFormatLocale();
   const [type, setType] = useState<'debt' | 'loan'>('debt');
@@ -92,6 +92,7 @@ export function DebtForm() {
       setDate(dayjs().format("YYYY-MM-DDTHH:mm"));
       setNotes("");
       toast.success(t("debt.saved"));
+      onSuccess?.();
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
       toast.error(t("debt.saveFailed"));
