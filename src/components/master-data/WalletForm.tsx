@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { db } from "@/lib/db";
+import { db, Wallet } from "@/lib/db";
 import { Plus } from "lucide-react";
 import * as Icons from "lucide-react";
 import { z } from "zod";
@@ -19,12 +19,24 @@ const ICONS = [
   "WalletCards", "Nfc"
 ];
 
-export function WalletForm() {
+interface WalletFormProps {
+  wallet?: Wallet | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function WalletForm({ wallet, open: externalOpen, onOpenChange: externalOnOpenChange }: WalletFormProps = {}) {
   const t = useT();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [balance, setBalance] = useState("");
-  const [icon, setIcon] = useState("Wallet");
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen! : internalOpen;
+  const setOpen = isControlled ? externalOnOpenChange! : setInternalOpen;
+  const isEdit = !!wallet;
+
+  const [name, setName] = useState(wallet?.name || "");
+  const [balance, setBalance] = useState(wallet ? String(wallet.current_balance) : "");
+  const [icon, setIcon] = useState(wallet?.icon || "Wallet");
 
   const makeSchema = () => z.object({
     name: z.string().min(1, t("validation.nameRequired")).max(100, t("validation.nameMax")),
@@ -40,31 +52,45 @@ export function WalletForm() {
     }
 
     try {
-      await db.wallets.add({
-        id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
-        name: parsed.data.name,
-        icon,
-        current_balance: parsed.data.balance,
-        updated_at: Date.now()
-      });
+      if (isEdit) {
+        await db.wallets.update(wallet!.id, {
+          name: parsed.data.name,
+          icon,
+          current_balance: parsed.data.balance,
+          updated_at: Date.now(),
+        });
+        toast.success(t("wallet.updated"));
+      } else {
+        await db.wallets.add({
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
+          name: parsed.data.name,
+          icon,
+          current_balance: parsed.data.balance,
+          updated_at: Date.now()
+        });
+        toast.success(t("wallet.saved"));
+      }
 
       setOpen(false);
-      setName("");
-      setBalance("");
-      setIcon("Wallet");
-      toast.success(t("wallet.saved"));
+      if (!isControlled) {
+        setName("");
+        setBalance("");
+        setIcon("Wallet");
+      }
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
-      toast.error(t("wallet.saveFailed"));
+      toast.error(isEdit ? t("wallet.saveFailed") : t("wallet.saveFailed"));
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" size="sm" className="h-8"><Plus className="mr-1 h-4 w-4" /> {t("wallet.add")}</Button>} />
+    <Dialog open={open} onOpenChange={isControlled ? setOpen : setOpen}>
+      {!isControlled && (
+        <DialogTrigger render={<Button variant="outline" size="sm" className="h-8"><Plus className="mr-1 h-4 w-4" /> {t("wallet.add")}</Button>} />
+      )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("wallet.addWallet")}</DialogTitle>
+          <DialogTitle>{isEdit ? t("wallet.editWallet") : t("wallet.addWallet")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
@@ -97,7 +123,7 @@ export function WalletForm() {
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("common.cancel")}</Button>
-            <Button type="submit">{t("common.save")}</Button>
+            <Button type="submit">{isEdit ? t("common.save") : t("common.save")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

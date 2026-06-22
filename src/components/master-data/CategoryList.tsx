@@ -1,17 +1,44 @@
 "use client";
 
+import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, Category } from "@/lib/db";
 import * as Icons from "lucide-react";
 import { CategoryForm } from "./CategoryForm";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RevealStagger } from "@/components/ui/RevealStagger";
 import { useT } from "@/lib/i18n";
+import { toast } from "sonner";
 
 export function CategoryList() {
   const t = useT();
   const categories = useLiveQuery(() => db.categories.toArray());
   const incomes = categories?.filter((c) => c.type === "income") || [];
   const expenses = categories?.filter((c) => c.type === "expense") || [];
+
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const txCount = useLiveQuery(
+    () => deletingCategory ? db.transactions.where("category_id").equals(deletingCategory.id).count() : 0,
+    [deletingCategory?.id]
+  );
+
+  const handleDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    setIsSubmitting(true);
+    try {
+      await db.categories.delete(deletingCategory.id);
+      toast.success(t("category.deleted"));
+      setDeletingCategory(null);
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') console.error(error);
+      toast.error(t("category.deleteFailed"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!categories) {
     return (
@@ -49,7 +76,25 @@ export function CategoryList() {
           {list.map((category) => {
             const Icon = (Icons[category.icon as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
             return (
-              <div key={category.id} className="flex flex-col items-center justify-center space-y-2 rounded-xl border bg-card p-3 shadow-sm text-center">
+              <div key={category.id} className="flex flex-col items-center justify-center space-y-2 rounded-xl border bg-card p-3 shadow-sm text-center relative">
+                <div className="absolute top-1 right-1 flex gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditingCategory(category)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-60 hover:opacity-100 hover:bg-muted"
+                    aria-label={t("common.edit")}
+                  >
+                    <Icons.Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeletingCategory(category)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-60 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={t("common.delete")}
+                  >
+                    <Icons.Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <div className={`flex h-10 w-10 items-center justify-center rounded-full ${category.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
                   <Icon className="h-5 w-5" />
                 </div>
@@ -66,11 +111,37 @@ export function CategoryList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">{t("category.title")}</h3>
-        <CategoryForm />
+        <CategoryForm key="create-category" />
       </div>
 
       {renderList(expenses, t("category.expense"))}
       {renderList(incomes, t("category.income"))}
+
+      <CategoryForm
+        key={editingCategory?.id ?? "edit-category"}
+        category={editingCategory}
+        open={editingCategory !== null}
+        onOpenChange={(o) => { if (!o) setEditingCategory(null); }}
+      />
+
+      <ConfirmDialog
+        open={deletingCategory !== null}
+        onOpenChange={(o) => { if (!o) setDeletingCategory(null); }}
+        title={t("category.deleteTitle")}
+        description={
+          <div className="space-y-2">
+            <p>{deletingCategory ? deletingCategory.name : ""}</p>
+            {txCount && txCount > 0 ? (
+              <p className="text-xs text-muted-foreground">{t("category.deleteDescWithCount", { count: txCount })}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{t("category.deleteDesc")}</p>
+            )}
+          </div>
+        }
+        confirmLabel={t("common.delete")}
+        onConfirm={handleDeleteCategory}
+        loading={isSubmitting}
+      />
     </div>
   );
 }

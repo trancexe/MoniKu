@@ -7,6 +7,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import * as Icons from "lucide-react";
 import { useT, useFormatLocale } from "@/lib/i18n";
+import { recalculateDebt } from "@/lib/debt-utils";
 
 interface TransactionDeleteDialogProps {
   transaction: Transaction | null;
@@ -49,6 +50,10 @@ export function TransactionDeleteDialog({
 
         await db.transactions.delete(transaction.id);
       });
+
+      if (transaction.debt_id) {
+        await recalculateDebt(transaction.debt_id);
+      }
 
       toast.success(t("transaction.deleted"));
       onOpenChange(false);

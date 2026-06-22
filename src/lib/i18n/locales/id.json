@@ -7,6 +7,8 @@
     "edit": "Edit",
     "confirm": "Konfirmasi",
     "back": "Kembali",
+    "deleted": "Berhasil dihapus",
+    "deleteFailed": "Gagal menghapus",
     "loading": "Memuat...",
     "loadingData": "Menyiapkan data...",
     "error": "Terjadi kesalahan",
@@ -94,7 +96,14 @@
     "add": "Tambah",
     "saved": "Dompet berhasil ditambahkan",
     "saveFailed": "Gagal menambahkan dompet",
-    "validationRequired": "Nama dan saldo wajib diisi"
+    "validationRequired": "Nama dan saldo wajib diisi",
+    "editWallet": "Edit Dompet",
+    "updated": "Dompet berhasil diperbarui",
+    "deleteTitle": "Hapus Dompet",
+    "deleteDesc": "Dompet yang dihapus tidak dapat dikembalikan. Transaksi terkait akan kehilangan referensi dompet.",
+    "deleteDescWithCount": "Dompet ini dipakai oleh {count} transaksi. Setelah dihapus, transaksi tersebut akan kehilangan referensi dompet dan ditampilkan dengan dompet 'Lainnya'.",
+    "deleted": "Dompet berhasil dihapus",
+    "deleteFailed": "Gagal menghapus dompet"
   },
   "category": {
     "title": "Kategori",
@@ -109,7 +118,14 @@
     "empty": "Belum ada kategori",
     "saved": "Kategori berhasil ditambahkan",
     "saveFailed": "Gagal menambahkan kategori",
-    "validationRequired": "Nama dan jenis wajib diisi"
+    "validationRequired": "Nama dan jenis wajib diisi",
+    "editCategory": "Edit Kategori",
+    "updated": "Kategori berhasil diperbarui",
+    "deleteTitle": "Hapus Kategori",
+    "deleteDesc": "Kategori yang dihapus tidak dapat dikembalikan. Transaksi terkait akan ditampilkan sebagai 'Lainnya'.",
+    "deleteDescWithCount": "Kategori ini dipakai oleh {count} transaksi. Setelah dihapus, transaksi tersebut akan ditampilkan sebagai 'Lainnya'.",
+    "deleted": "Kategori berhasil dihapus",
+    "deleteFailed": "Gagal menghapus kategori"
   },
   "debt": {
     "title": "Hutang / Piutang",
@@ -138,6 +154,12 @@
     "validationRequired": "Nama wajib diisi",
     "type_debt": "Hutang",
     "type_loan": "Piutang",
+    "editLockedNote": "Untuk mengubah tipe atau nominal total, hapus catatan dan buat baru.",
+    "deleteTitle": "Hapus Catatan Hutang/Piutang",
+    "deleteConfirmDesc": "Catatan hutang/piutang akan dihapus. Transaksi pembayaran yang terkait akan diputuskan dari catatan ini tetapi transaksi tetap ada di riwayat Anda.",
+    "deleteWithCountNote": "{count} transaksi pembayaran terikat pada catatan ini akan diputuskan.",
+    "updated": "Catatan berhasil diperbarui",
+    "saveFailedEdit": "Gagal memperbarui catatan",
     "detail": {
       "title": "Detail Hutang / Piutang",
       "back": "Kembali ke daftar",

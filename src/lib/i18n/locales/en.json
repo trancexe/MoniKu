@@ -7,6 +7,8 @@
     "edit": "Edit",
     "confirm": "Confirm",
     "back": "Back",
+    "deleted": "Deleted successfully",
+    "deleteFailed": "Failed to delete",
     "loading": "Loading...",
     "loadingData": "Preparing data...",
     "error": "An error occurred",
@@ -94,7 +96,14 @@
     "add": "Add",
     "saved": "Wallet added",
     "saveFailed": "Failed to add wallet",
-    "validationRequired": "Name and balance are required"
+    "validationRequired": "Name and balance are required",
+    "editWallet": "Edit Wallet",
+    "updated": "Wallet updated successfully",
+    "deleteTitle": "Delete Wallet",
+    "deleteDesc": "Deleted wallets cannot be restored. Related transactions will lose their wallet reference.",
+    "deleteDescWithCount": "This wallet is used by {count} transactions. After deletion, those transactions will lose their wallet reference and display as 'Other'.",
+    "deleted": "Wallet deleted",
+    "deleteFailed": "Failed to delete wallet"
   },
   "category": {
     "title": "Categories",
@@ -109,7 +118,14 @@
     "empty": "No categories yet",
     "saved": "Category added",
     "saveFailed": "Failed to add category",
-    "validationRequired": "Name and type are required"
+    "validationRequired": "Name and type are required",
+    "editCategory": "Edit Category",
+    "updated": "Category updated successfully",
+    "deleteTitle": "Delete Category",
+    "deleteDesc": "Deleted categories cannot be restored. Related transactions will display as 'Other'.",
+    "deleteDescWithCount": "This category is used by {count} transactions. After deletion, those transactions will display as 'Other'.",
+    "deleted": "Category deleted",
+    "deleteFailed": "Failed to delete category"
   },
   "debt": {
     "title": "Debt / Receivables",
@@ -138,6 +154,12 @@
     "validationRequired": "Name is required",
     "type_debt": "Debt",
     "type_loan": "Receivable",
+    "editLockedNote": "To change the type or total amount, delete this entry and create a new one.",
+    "deleteTitle": "Delete Debt/Receivable Entry",
+    "deleteConfirmDesc": "This debt/receivable entry will be deleted. Linked payment transactions will be unlinked but remain in your history.",
+    "deleteWithCountNote": "{count} linked payment transactions will be unlinked.",
+    "updated": "Entry updated successfully",
+    "saveFailedEdit": "Failed to update entry",
     "detail": {
       "title": "Debt / Receivable Detail",
       "back": "Back to list",

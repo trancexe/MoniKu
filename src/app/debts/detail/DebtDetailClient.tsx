@@ -3,24 +3,20 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction } from "@/lib/db";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ChevronLeft, Trash2, ArrowUpRight, ArrowDownLeft, ReceiptText } from "lucide-react";
+import { ChevronLeft, Trash2, Pencil, ArrowUpRight, ArrowDownLeft, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useT, useFormatLocale } from "@/lib/i18n";
 import dayjs from "dayjs";
 import { RepaymentModal } from "@/components/debts/RepaymentModal";
 import { TransactionEditSheet } from "@/components/transactions/TransactionEditSheet";
+import { DebtEditSheet } from "@/components/debts/DebtEditSheet";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { recalculateDebt } from "@/lib/debt-utils";
 import { RevealStagger } from "@/components/ui/RevealStagger";
 import Link from "next/link";
 
-/**
- * Client implementation of the debt detail page. Lives in its own
- * "use client" file so the route segment's `page.tsx` can stay a
- * server component and export `generateStaticParams` — required by
- * Next.js 16 static export (`output: "export"`).
- */
 export function DebtDetailClient() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -31,6 +27,9 @@ export function DebtDetailClient() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [deleteDebtOpen, setDeleteDebtOpen] = useState(false);
+  const [unlinkTarget, setUnlinkTarget] = useState<string | null>(null);
 
   const debt = useLiveQuery(() => {
     if (!id) return undefined;
@@ -57,23 +56,21 @@ export function DebtDetailClient() {
     );
   }
 
-  const handleUnlink = async (transactionId: string) => {
-    if (!confirm(t("debt.detail.unlinkConfirmDesc"))) return;
+  const handleUnlink = async (txId: string) => {
     try {
-      await db.transactions.update(transactionId, { debt_id: undefined });
-      await recalculateDebt(id);
+      await db.transactions.update(txId, { debt_id: undefined });
+      if (id) await recalculateDebt(id);
       toast.success(t("debt.modal.unlinkSuccess"));
     } catch (error) {
       if (process.env.NODE_ENV !== "production") console.error("Unlink failed", error);
       toast.error(t("debt.modal.unlinkFailed"));
+    } finally {
+      setUnlinkTarget(null);
     }
   };
 
   const handleDeleteDebt = async () => {
-    if (!confirm(t("common.deleteConfirm"))) return;
     try {
-      // First explicitly unlink any linked transactions to be safe,
-      // although they become effectively unlinked if the debt_id no longer exists.
       const txs = await db.transactions.where("debt_id").equals(id).toArray();
       await db.transaction('rw', db.transactions, db.debt_loans, async () => {
         for (const tx of txs) {
@@ -86,6 +83,8 @@ export function DebtDetailClient() {
     } catch (error) {
       if (process.env.NODE_ENV !== "production") console.error("Delete failed", error);
       toast.error(t("common.deleteFailed"));
+    } finally {
+      setDeleteDebtOpen(false);
     }
   };
 
@@ -122,9 +121,24 @@ export function DebtDetailClient() {
           </Link>
           <h1 className="text-xl font-bold">{t("debt.detail.title")}</h1>
         </div>
-        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={handleDeleteDebt}>
-          <Trash2 className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setEditSheetOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+            aria-label={t("common.edit")}
+          >
+            <Pencil className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleteDebtOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+            aria-label={t("common.delete")}
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       {/* Debt Info Card */}
@@ -196,7 +210,7 @@ export function DebtDetailClient() {
                     variant="ghost"
                     size="sm"
                     className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 h-8"
-                    onClick={(e) => { e.stopPropagation(); handleUnlink(tx.id); }}
+                    onClick={(e) => { e.stopPropagation(); setUnlinkTarget(tx.id); }}
                   >
                     {t("debt.detail.unlink")}
                   </Button>
@@ -223,6 +237,36 @@ export function DebtDetailClient() {
         open={editOpen}
         onOpenChange={setEditOpen}
         onUpdated={() => { if (id) void recalculateDebt(id); }}
+      />
+
+      <DebtEditSheet
+        key={debt?.id || 'edit'}
+        debt={debt}
+        open={editSheetOpen}
+        onOpenChange={setEditSheetOpen}
+      />
+
+      <ConfirmDialog
+        open={deleteDebtOpen}
+        onOpenChange={setDeleteDebtOpen}
+        title={t("debt.deleteTitle")}
+        description={
+          <div className="space-y-2">
+            <p>{t("debt.deleteConfirmDesc")}</p>
+            <p className="text-xs text-muted-foreground">{t("debt.deleteWithCountNote", { count: linkedTransactions?.length ?? 0 })}</p>
+          </div>
+        }
+        confirmLabel={t("common.delete")}
+        onConfirm={handleDeleteDebt}
+      />
+
+      <ConfirmDialog
+        open={unlinkTarget !== null}
+        onOpenChange={(o) => { if (!o) setUnlinkTarget(null); }}
+        title={t("debt.detail.unlinkConfirmTitle")}
+        description={t("debt.detail.unlinkConfirmDesc")}
+        confirmLabel={t("debt.detail.unlink")}
+        onConfirm={() => { if (unlinkTarget) return handleUnlink(unlinkTarget); }}
       />
     </div>
   );

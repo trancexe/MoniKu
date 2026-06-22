@@ -15,6 +15,7 @@ import * as Icons from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useT, useFormatLocale } from "@/lib/i18n";
+import { recalculateDebt } from "@/lib/debt-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -125,6 +126,10 @@ export function TransactionEditSheet({
           sync_status: "pending",
         });
       });
+
+      if (transaction.debt_id) {
+        await recalculateDebt(transaction.debt_id);
+      }
 
       toast.success(t("transaction.updated"));
       onUpdated?.();

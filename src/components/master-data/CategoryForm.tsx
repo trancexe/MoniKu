@@ -6,19 +6,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/db";
+import { db, Category } from "@/lib/db";
 import { Plus } from "lucide-react";
 import * as Icons from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useT } from "@/lib/i18n";
 
-export function CategoryForm() {
+interface CategoryFormProps {
+  category?: Category | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function CategoryForm({ category, open: externalOpen, onOpenChange: externalOnOpenChange }: CategoryFormProps = {}) {
   const t = useT();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [type, setType] = useState<"income" | "expense">("expense");
-  const [icon, setIcon] = useState("Coffee");
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen! : internalOpen;
+  const setOpen = isControlled ? externalOnOpenChange! : setInternalOpen;
+  const isEdit = !!category;
+
+  const [name, setName] = useState(category?.name || "");
+  const [type, setType] = useState<"income" | "expense">(category?.type || "expense");
+  const [icon, setIcon] = useState(category?.icon || "Coffee");
 
   const makeSchema = () => z.object({
     name: z.string().min(1, t("validation.nameRequired")).max(100, t("validation.nameMax")),
@@ -47,21 +59,32 @@ export function CategoryForm() {
     }
 
     try {
-      await db.categories.add({
-        id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
-        name: parsed.data.name,
-        type,
-        icon,
-      });
+      if (isEdit) {
+        await db.categories.update(category!.id, {
+          name: parsed.data.name,
+          type,
+          icon,
+        });
+        toast.success(t("category.updated"));
+      } else {
+        await db.categories.add({
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
+          name: parsed.data.name,
+          type,
+          icon,
+        });
+        toast.success(t("category.saved"));
+      }
 
       setOpen(false);
-      setName("");
-      setType("expense");
-      setIcon("Coffee");
-      toast.success(t("category.saved"));
+      if (!isControlled) {
+        setName("");
+        setType("expense");
+        setIcon("Coffee");
+      }
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') console.error(error);
-      toast.error(t("category.saveFailed"));
+      toast.error(isEdit ? t("category.saveFailed") : t("category.saveFailed"));
     }
   };
 
@@ -69,10 +92,12 @@ export function CategoryForm() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" size="sm" className="h-8"><Plus className="mr-1 h-4 w-4" /> {t("wallet.add")}</Button>} />
+      {!isControlled && (
+        <DialogTrigger render={<Button variant="outline" size="sm" className="h-8"><Plus className="mr-1 h-4 w-4" /> {t("wallet.add")}</Button>} />
+      )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("category.addCategory")}</DialogTitle>
+          <DialogTitle>{isEdit ? t("category.editCategory") : t("category.addCategory")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
@@ -113,7 +138,7 @@ export function CategoryForm() {
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("common.cancel")}</Button>
-            <Button type="submit">{t("common.save")}</Button>
+            <Button type="submit">{isEdit ? t("common.save") : t("common.save")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

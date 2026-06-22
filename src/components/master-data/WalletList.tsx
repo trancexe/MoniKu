@@ -1,16 +1,43 @@
 "use client";
 
+import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, Wallet } from "@/lib/db";
 import * as Icons from "lucide-react";
 import { WalletForm } from "./WalletForm";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RevealStagger } from "@/components/ui/RevealStagger";
 import { useT, useFormatLocale } from "@/lib/i18n";
+import { toast } from "sonner";
 
 export function WalletList() {
   const t = useT();
   const { formatCurrencyRaw } = useFormatLocale();
   const wallets = useLiveQuery(() => db.wallets.toArray());
+
+  const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
+  const [deletingWallet, setDeletingWallet] = useState<Wallet | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const txCount = useLiveQuery(
+    () => deletingWallet ? db.transactions.where("wallet_id").equals(deletingWallet.id).count() : 0,
+    [deletingWallet?.id]
+  );
+
+  const handleDeleteWallet = async () => {
+    if (!deletingWallet) return;
+    setIsSubmitting(true);
+    try {
+      await db.wallets.delete(deletingWallet.id);
+      toast.success(t("wallet.deleted"));
+      setDeletingWallet(null);
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') console.error(error);
+      toast.error(t("wallet.deleteFailed"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!wallets) {
     return (
@@ -30,7 +57,7 @@ export function WalletList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">{t("wallet.title")}</h3>
-        <WalletForm />
+        <WalletForm key="create-wallet" />
       </div>
 
       <div className="grid gap-3">
@@ -46,6 +73,24 @@ export function WalletList() {
                   <p className="font-medium">{wallet.name}</p>
                   <p className="text-sm text-muted-foreground tabular-nums">{formatCurrencyRaw(wallet.current_balance)}</p>
                 </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingWallet(wallet)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                    aria-label={t("common.edit")}
+                  >
+                    <Icons.Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeletingWallet(wallet)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={t("common.delete")}
+                  >
+                    <Icons.Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -59,6 +104,32 @@ export function WalletList() {
           </div>
         )}
       </div>
+
+      <WalletForm
+        key={editingWallet?.id ?? "edit-wallet"}
+        wallet={editingWallet}
+        open={editingWallet !== null}
+        onOpenChange={(o) => { if (!o) setEditingWallet(null); }}
+      />
+
+      <ConfirmDialog
+        open={deletingWallet !== null}
+        onOpenChange={(o) => { if (!o) setDeletingWallet(null); }}
+        title={t("wallet.deleteTitle")}
+        description={
+          <div className="space-y-2">
+            <p>{deletingWallet ? `${deletingWallet.name} — ${formatCurrencyRaw(deletingWallet.current_balance)}` : ""}</p>
+            {txCount && txCount > 0 ? (
+              <p className="text-xs text-muted-foreground">{t("wallet.deleteDescWithCount", { count: txCount })}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{t("wallet.deleteDesc")}</p>
+            )}
+          </div>
+        }
+        confirmLabel={t("common.delete")}
+        onConfirm={handleDeleteWallet}
+        loading={isSubmitting}
+      />
     </div>
   );
 }

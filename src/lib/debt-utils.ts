@@ -6,8 +6,8 @@ import { logError } from "./logger";
  * debt's `remaining_amount` and `status` consistent with the set of
  * transactions linked to it via `Transaction.debt_id`.
  *
- * Call this whenever a transaction is added, linked, or unlinked
- * from a debt. The function:
+ * Call this whenever a transaction is added, linked, unlinked,
+ * edited, or deleted from a debt. The function:
  *
  *   1. Loads the debt by id. If it does not exist, no-op.
  *   2. Queries all transactions with `debt_id === debtId` via the
@@ -31,6 +31,11 @@ import { logError } from "./logger";
  *
  * Idempotent: calling twice in a row with no changes produces no
  * diff. Safe to call on every link/unlink.
+ *
+ * Callers (TransactionEditSheet, TransactionDeleteDialog, DebtDetailClient
+ * unlink path) should invoke `recalculateDebt(debtId)` AFTER mutating
+ * transactions to keep the debt's `remaining_amount` and `status` in sync.
+ * The function is idempotent and silent on no-op.
  *
  * Concurrency: a multi-tab user could trigger two parallel
  * recalculations and race the final `db.debt_loans.update`. Dexie's
