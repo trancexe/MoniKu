@@ -3,7 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction } from "@/lib/db";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ChevronLeft, Trash2, Pencil, ArrowUpRight, ArrowDownLeft, ReceiptText } from "lucide-react";
+import { CaretLeft, Trash, Pencil, ArrowUpRight, ArrowDownLeft, Receipt } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useT, useFormatLocale } from "@/lib/i18n";
 import dayjs from "dayjs";
@@ -47,7 +47,7 @@ export function DebtDetailClient() {
   if (!id) {
     return (
       <div className="flex flex-col items-center justify-center p-10 space-y-4 text-center">
-        <ReceiptText className="h-12 w-12 text-muted-foreground opacity-50" />
+        <Receipt weight="duotone" className="h-12 w-12 text-muted-foreground opacity-50" />
         <p className="font-medium">{t("debt.detail.notFound")}</p>
         <Link href="/debts">
           <Button variant="outline">{t("debt.detail.back")}</Button>
@@ -72,9 +72,19 @@ export function DebtDetailClient() {
   const handleDeleteDebt = async () => {
     try {
       const txs = await db.transactions.where("debt_id").equals(id).toArray();
-      await db.transaction('rw', db.transactions, db.debt_loans, async () => {
+      await db.transaction('rw', db.transactions, db.debt_loans, db.wallets, async () => {
         for (const tx of txs) {
-          await db.transactions.update(tx.id, { debt_id: undefined });
+          const wallet = await db.wallets.get(tx.wallet_id);
+          if (wallet) {
+            const reversedBalance = tx.type === 'income'
+              ? wallet.current_balance - tx.amount
+              : wallet.current_balance + tx.amount;
+            await db.wallets.update(tx.wallet_id, {
+              current_balance: reversedBalance,
+              updated_at: Date.now(),
+            });
+          }
+          await db.transactions.delete(tx.id);
         }
         await db.debt_loans.delete(id);
       });
@@ -101,7 +111,7 @@ export function DebtDetailClient() {
   if (debt === null) {
     return (
       <div className="flex flex-col items-center justify-center p-10 space-y-4 text-center">
-        <ReceiptText className="h-12 w-12 text-muted-foreground opacity-50" />
+        <Receipt weight="duotone" className="h-12 w-12 text-muted-foreground opacity-50" />
         <p className="font-medium">{t("debt.detail.notFound")}</p>
         <Link href="/debts">
           <Button variant="outline">{t("debt.detail.back")}</Button>
@@ -116,7 +126,7 @@ export function DebtDetailClient() {
         <div className="flex items-center space-x-2">
           <Link href="/debts">
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
-              <ChevronLeft className="h-6 w-6" />
+              <CaretLeft weight="bold" className="h-6 w-6" />
             </Button>
           </Link>
           <h1 className="text-xl font-bold">{t("debt.detail.title")}</h1>
@@ -128,7 +138,7 @@ export function DebtDetailClient() {
             className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
             aria-label={t("common.edit")}
           >
-            <Pencil className="h-5 w-5" />
+            <Pencil weight="duotone" className="h-5 w-5" />
           </button>
           <button
             type="button"
@@ -136,7 +146,7 @@ export function DebtDetailClient() {
             className="flex h-10 w-10 items-center justify-center rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
             aria-label={t("common.delete")}
           >
-            <Trash2 className="h-5 w-5" />
+            <Trash weight="duotone" className="h-5 w-5" />
           </button>
         </div>
       </header>
@@ -147,7 +157,7 @@ export function DebtDetailClient() {
           <div>
             <div className="flex items-center space-x-2 mb-1">
               <span className={`flex items-center text-xs font-bold uppercase ${debt.type === 'debt' ? 'text-red-500' : 'text-green-500'}`}>
-                {debt.type === 'debt' ? <ArrowUpRight className="h-4 w-4 mr-1" /> : <ArrowDownLeft className="h-4 w-4 mr-1" />}
+                {debt.type === 'debt' ? <ArrowUpRight weight="bold" className="h-4 w-4 mr-1" /> : <ArrowDownLeft weight="bold" className="h-4 w-4 mr-1" />}
                 {debt.type === 'debt' ? t("debt.type_debt_label") : t("debt.type_loan_label")}
               </span>
             </div>
@@ -187,7 +197,7 @@ export function DebtDetailClient() {
 
         {linkedTransactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-8 text-center dark:bg-zinc-900/50">
-            <ReceiptText className="h-8 w-8 text-zinc-400 mb-3" />
+            <Receipt weight="duotone" className="h-8 w-8 text-zinc-400 mb-3" />
             <p className="text-sm text-zinc-500">{t("debt.detail.noPayments")}</p>
           </div>
         ) : (

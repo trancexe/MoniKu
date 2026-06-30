@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction } from "@/lib/db";
-import * as Icons from "lucide-react";
+import * as Icons from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import "dayjs/locale/id";
 import isToday from "dayjs/plugin/isToday";
@@ -107,18 +107,18 @@ export function TransactionHistory() {
         <div
           role="tablist"
           aria-label={t("transaction.walletFilter")}
-          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden"
+          className="flex gap-2 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden"
         >
           <WalletChip
             label={t("transaction.allWallets")}
-            icon={Icons.LayoutGrid}
+            icon={Icons.GridFour}
             active={effectiveWalletId === null}
             onClick={() => setWalletFilter(null)}
           />
           {wallets.map((wallet) => {
             const WalletIcon = (Icons[
               wallet.icon as keyof typeof Icons
-            ] ?? Icons.Wallet) as React.ElementType;
+            ] ?? Icons.Wallet) as unknown as React.ElementType;
             const isActive = effectiveWalletId === wallet.id;
             return (
               <WalletChip
@@ -156,7 +156,7 @@ export function TransactionHistory() {
       {transactions.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-10 text-center dark:bg-zinc-900/50 mx-4">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-            <Icons.Receipt className="h-6 w-6" />
+            <Icons.Receipt weight="duotone" className="h-6 w-6" />
           </div>
           <p className="font-medium text-zinc-900 dark:text-zinc-100">
             {filter === "all" ? t("transaction.emptyAll") : t("transaction.emptyFiltered", { type: filter === "income" ? t("transaction.income") : t("transaction.expense") })}
@@ -182,14 +182,14 @@ export function TransactionHistory() {
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {group.label}
                   </h3>
-                  <div className="flex items-center gap-3 text-[11px] font-medium tabular-nums">
+                  <div className="flex items-center gap-3 text-[11px] font-medium tabular-nums min-w-0 justify-end">
                     {dayIncome > 0 && (
-                      <span className="text-green-600 dark:text-green-500">
+                      <span className="text-green-600 dark:text-green-500 truncate max-w-[80px] sm:max-w-[120px]">
                         +{formatCurrency(dayIncome)}
                       </span>
                     )}
                     {dayExpense > 0 && (
-                      <span className="text-red-500 dark:text-red-400">
+                      <span className="text-red-500 dark:text-red-400 truncate max-w-[80px] sm:max-w-[120px]">
                         -{formatCurrency(dayExpense)}
                       </span>
                     )}
@@ -202,8 +202,8 @@ export function TransactionHistory() {
                     const Icon = (
                       category?.icon
                         ? Icons[category.icon as keyof typeof Icons]
-                        : Icons.CircleDollarSign
-                    ) as React.ComponentType<{ className?: string }>;
+                        : Icons.CurrencyDollar
+                    ) as unknown as React.ComponentType<{ className?: string, weight?: string }>;
                     const isIncome = trx.type === "income";
 
                     return (
@@ -224,7 +224,7 @@ export function TransactionHistory() {
                                 : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
                             }`}
                           >
-                            <Icon className="h-5 w-5" />
+                            <Icon weight="duotone" className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">
@@ -236,9 +236,9 @@ export function TransactionHistory() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0 max-w-[40%] justify-end">
                           <div
-                            className={`shrink-0 font-medium tabular-nums text-sm ${
+                            className={`font-medium tabular-nums text-sm truncate ${
                               isIncome
                                 ? "text-green-600 dark:text-green-500"
                                 : "text-zinc-900 dark:text-zinc-100"
@@ -246,7 +246,7 @@ export function TransactionHistory() {
                           >
                             {isIncome ? "+" : "-"}{formatCurrency(trx.amount)}
                           </div>
-                          <Icons.ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                          <Icons.CaretRight weight="bold" className="shrink-0 h-4 w-4 text-muted-foreground/30" />
                         </div>
                       </button>
                     );
