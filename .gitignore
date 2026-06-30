@@ -38,6 +38,7 @@ yarn-error.log*
 
 # agent skills (local only)
 .agents/
+skills-lock.json
 
 # typescript
 *.tsbuildinfo

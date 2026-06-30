@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Transaction } from "@/lib/db";
-import * as Icons from "lucide-react";
+import * as Icons from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import { RevealStagger } from "@/components/ui/RevealStagger";
 import { TransactionEditSheet } from "@/components/transactions/TransactionEditSheet";
@@ -136,23 +136,28 @@ export function DashboardOverview() {
   }
 
   return (
-    <div className="flex flex-col space-y-8 p-4 pt-8">
-      {/* Dashboard Header */}
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("dashboard.title")}</h1>
-          <p className="text-muted-foreground text-sm">{t("dashboard.subtitle")}</p>
-        </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-900 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700">
-          <Icons.Wallet className="h-5 w-5" />
-        </div>
-      </header>
+    <div className="flex flex-col pb-8">
+      {/* Decorative Header Background that bleeds to edges */}
+      <div className="relative bg-zinc-100/50 dark:bg-zinc-900/30 rounded-b-[2.5rem] px-4 pt-10 pb-24 -mb-16 border-b border-black/5 dark:border-white/5">
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t("dashboard.title")}</h1>
+            <p className="text-muted-foreground text-sm">{t("dashboard.subtitle")}</p>
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-zinc-900 shadow-sm transition hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700">
+            <Icons.Wallet weight="duotone" className="h-6 w-6" />
+          </div>
+        </header>
+      </div>
 
-      {/* Total Balance Card */}
-      <section className="relative overflow-hidden rounded-2xl bg-zinc-950 p-6 text-zinc-50 shadow-xl shadow-black/10 dark:bg-zinc-900 dark:border dark:border-zinc-800">
-        <div className="absolute inset-0 border-[1px] border-white/10 rounded-2xl pointer-events-none" />
-        <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] rounded-2xl pointer-events-none" />
-        <div className="flex items-start justify-between gap-3">
+      {/* Main Content Area (Overlaps Header) */}
+      <div className="px-4 relative z-10 space-y-8">
+        {/* Total Balance Card */}
+      <section className="relative overflow-hidden rounded-3xl bg-zinc-950 p-6 text-zinc-50 shadow-tinted dark:bg-zinc-900 dark:border dark:border-zinc-800">
+        <div className="absolute inset-0 border-[1px] border-white/10 rounded-3xl pointer-events-none" />
+        <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] rounded-3xl pointer-events-none" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-[80px] pointer-events-none" />
+        <div className="relative flex items-start justify-between gap-3">
           <p className="text-sm font-medium text-zinc-400">{balanceLabel}</p>
           <button
             type="button"
@@ -164,9 +169,9 @@ export function DashboardOverview() {
             className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-zinc-50 active:scale-95"
           >
             {isBalanceHidden ? (
-              <Icons.EyeOff className="h-4 w-4" />
+              <Icons.EyeSlash weight="fill" className="h-4 w-4" />
             ) : (
-              <Icons.Eye className="h-4 w-4" />
+              <Icons.Eye weight="fill" className="h-4 w-4" />
             )}
           </button>
         </div>
@@ -214,19 +219,22 @@ export function DashboardOverview() {
         </section>
       )}
 
-      {/* Quick Action */}
-      <section aria-label={t("dashboard.quickActions")} className="grid grid-cols-2 gap-3">
-        <Link href="/debts" className="flex flex-col items-start gap-3 rounded-2xl bg-zinc-100/50 p-4 transition hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 active:scale-[0.98]">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
-            <Icons.Users className="h-4 w-4" />
+      {/* Quick Action - Asymmetric Bento Grid */}
+      <section aria-label={t("dashboard.quickActions")} className="grid grid-cols-[1.5fr_1fr] gap-3">
+        <Link href="/transactions" className="relative flex flex-col justify-end items-start gap-4 rounded-3xl bg-primary/10 p-5 overflow-hidden transition-all ease-spring hover:bg-primary/15 dark:bg-primary/20 dark:hover:bg-primary/30 active:scale-[0.96]">
+          <div className="absolute -right-4 -top-4 text-primary/20 pointer-events-none">
+            <Icons.PlusCircle weight="fill" className="h-24 w-24" />
           </div>
-          <span className="text-sm font-medium">{t("dashboard.debtLoan")}</span>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+            <Icons.Plus weight="bold" className="h-5 w-5" />
+          </div>
+          <span className="text-sm font-semibold text-primary-foreground/90">{t("dashboard.addTransaction")}</span>
         </Link>
-        <Link href="/transactions" className="flex flex-col items-start gap-3 rounded-2xl bg-zinc-100/50 p-4 transition hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 active:scale-[0.98]">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
-            <Icons.PlusCircle className="h-4 w-4" />
+        <Link href="/debts" className="flex flex-col justify-end items-start gap-3 rounded-3xl bg-zinc-100/80 p-5 transition-all ease-spring hover:bg-zinc-200/80 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 active:scale-[0.96]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-zinc-700 shadow-sm dark:bg-zinc-700 dark:text-zinc-200">
+            <Icons.Users weight="duotone" className="h-5 w-5" />
           </div>
-          <span className="text-sm font-medium">{t("dashboard.addTransaction")}</span>
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("dashboard.debtLoan")}</span>
         </Link>
       </section>
 
@@ -245,7 +253,7 @@ export function DashboardOverview() {
           {transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 p-10 text-center dark:bg-zinc-900/50">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                <Icons.Receipt className="h-6 w-6" />
+                <Icons.Receipt weight="duotone" className="h-6 w-6" />
               </div>
               <p className="font-medium text-zinc-900 dark:text-zinc-100">{t("dashboard.emptyTitle")}</p>
               <p className="mt-1 text-sm text-zinc-500 max-w-[200px]">
@@ -253,9 +261,9 @@ export function DashboardOverview() {
               </p>
               <Link
                 href="/transactions"
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 active:scale-[0.97] dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-all ease-spring hover:bg-zinc-800 active:scale-[0.96] dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 shadow-sm"
               >
-                <Icons.PlusCircle className="h-4 w-4" />
+                <Icons.PlusCircle weight="fill" className="h-4 w-4" />
                 {t("dashboard.addTransaction")}
               </Link>
             </div>
@@ -263,7 +271,7 @@ export function DashboardOverview() {
             <RevealStagger className="space-y-2.5">
               {transactions.map((trx) => {
                 const category = getCategory(trx.category_id);
-                const Icon = (category?.icon ? Icons[category.icon as keyof typeof Icons] : Icons.CircleDollarSign) as React.ElementType;
+                const Icon = (category?.icon ? Icons[category.icon as keyof typeof Icons] : Icons.CurrencyDollar) as React.ElementType;
                 const isIncome = trx.type === 'income';
 
                 return (
@@ -282,7 +290,7 @@ export function DashboardOverview() {
                           ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
                           : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                       }`}>
-                        <Icon className="h-5 w-5" />
+                        <Icon weight="duotone" className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-sm sm:text-base truncate">{category?.name || t("transaction.categoryOther")}</p>
@@ -295,7 +303,7 @@ export function DashboardOverview() {
                           ? "•••"
                           : `${isIncome ? '+' : '-'}${formatCurrency(trx.amount)}`}
                       </div>
-                      <Icons.ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                      <Icons.CaretRight weight="bold" className="h-4 w-4 text-muted-foreground/30" />
                     </div>
                   </button>
                 );
@@ -304,6 +312,8 @@ export function DashboardOverview() {
           )}
         </div>
       </section>
+      </div>
+
 
       <TransactionEditSheet
         transaction={selectedTransaction}

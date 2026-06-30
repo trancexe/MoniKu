@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { CustomNumpad } from "./CustomNumpad";
-import * as Icons from "lucide-react";
+import * as Icons from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -219,9 +219,9 @@ export function TransactionForm() {
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeCategory")}</div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
+              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
                 {categories?.map(c => {
-                  const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
+                  const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.Question) as React.ElementType;
                   const isSelected = categoryId === c.id;
                   return (
                     <button
@@ -232,13 +232,13 @@ export function TransactionForm() {
                         setCategoryId(c.id);
                       }}
                       aria-pressed={isSelected}
-                      className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all duration-300 active:scale-[0.96] ${
+                      className={`flex flex-col items-center justify-center shrink-0 w-[88px] snap-start rounded-2xl border p-3 transition-all ease-spring duration-300 active:scale-[0.94] ${
                         isSelected 
-                          ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background' 
+                          ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-tinted' 
                           : 'border-border/50 bg-card text-muted-foreground hover:bg-muted/50 hover:border-border'
                       }`}
                     >
-                      <Icon className={`h-5 w-5 mb-1.5 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
+                      <Icon weight={isSelected ? "fill" : "duotone"} className={`h-6 w-6 mb-2 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
                       <span className={`text-[11px] font-medium text-center line-clamp-1 w-full ${isSelected ? 'opacity-100 font-semibold' : 'opacity-70'}`}>
                         {c.name}
                       </span>
@@ -250,7 +250,7 @@ export function TransactionForm() {
 
             <div className="space-y-2">
               <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeWallet")}</div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
+              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
                 {wallets?.map(w => {
                   const Icon = (Icons[w.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
                   const isSelected = walletId === w.id;
@@ -263,13 +263,13 @@ export function TransactionForm() {
                         setWalletId(w.id);
                       }}
                       aria-pressed={isSelected}
-                      className={`flex flex-col items-center justify-center rounded-2xl border p-3 transition-all duration-300 active:scale-[0.96] ${
+                      className={`flex flex-col items-center justify-center shrink-0 w-[100px] snap-start rounded-2xl border p-3 transition-all ease-spring duration-300 active:scale-[0.94] ${
                         isSelected 
-                          ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background' 
+                          ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-tinted' 
                           : 'border-border/50 bg-card text-muted-foreground hover:bg-muted/50 hover:border-border'
                       }`}
                     >
-                      <Icon className={`h-5 w-5 mb-1.5 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
+                      <Icon weight={isSelected ? "fill" : "duotone"} className={`h-6 w-6 mb-2 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
                       <span className={`text-[11px] font-medium text-center line-clamp-2 w-full leading-tight ${isSelected ? 'opacity-100 font-semibold' : 'opacity-70'}`}>
                         {w.name}
                       </span>

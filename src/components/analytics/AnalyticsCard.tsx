@@ -12,16 +12,19 @@ interface AnalyticsCardProps {
 
 export function AnalyticsCard({ title, children, action, className = "", id }: AnalyticsCardProps) {
   return (
-    <section id={id} className={`rounded-2xl bg-card p-4 md:p-6 shadow-sm border border-border/50 ${className}`}>
-      <div className="flex flex-col gap-3 mb-4">
-        <h2 className="text-base font-semibold tracking-tight shrink-0">{title}</h2>
-        {action && (
-          <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
-            {action}
-          </div>
-        )}
+    <section id={id} className={`relative overflow-hidden rounded-3xl bg-card p-4 md:p-6 shadow-tinted border border-border/50 ${className}`}>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none opacity-50 dark:opacity-20" />
+      <div className="relative z-10">
+        <div className="flex flex-col gap-3 mb-4">
+          <h2 className="text-base font-semibold tracking-tight shrink-0">{title}</h2>
+          {action && (
+            <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+              {action}
+            </div>
+          )}
+        </div>
+        {children}
       </div>
-      {children}
     </section>
   );
 }
