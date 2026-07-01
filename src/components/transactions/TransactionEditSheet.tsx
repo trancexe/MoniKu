@@ -238,7 +238,7 @@ export function TransactionEditSheet({
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {categories?.map((c) => {
                         const CatIcon = (Icons[c.icon as keyof typeof Icons] ||
-                          Icons.HelpCircle) as React.ComponentType<{ className?: string }>;
+                          Icons.Question) as React.ElementType<{ className?: string }>;
                         const isSelected = categoryId === c.id;
                         return (
                           <button

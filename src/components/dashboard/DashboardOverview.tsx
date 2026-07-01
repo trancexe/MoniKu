@@ -271,7 +271,7 @@ export function DashboardOverview() {
             <RevealStagger className="space-y-2.5">
               {transactions.map((trx) => {
                 const category = getCategory(trx.category_id);
-                const Icon = (category?.icon ? Icons[category.icon as keyof typeof Icons] : Icons.CurrencyDollar) as React.ElementType;
+                const Icon = ((category?.icon && Icons[category.icon as keyof typeof Icons]) || Icons.CurrencyDollar) as React.ElementType;
                 const isIncome = trx.type === 'income';
 
                 return (

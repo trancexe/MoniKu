@@ -188,7 +188,7 @@ export function useAnalyticsData() {
         return {
           category_id: id,
           name: cat?.name || "?",
-          icon: cat?.icon || "CircleDollarSign",
+          icon: cat?.icon || "CurrencyDollar",
           amount,
           percent: total > 0 ? Math.round((amount / total) * 1000) / 10 : 0,
           type,
@@ -325,7 +325,7 @@ export function useAnalyticsData() {
       rows.push({
         category_id: id,
         name: cat?.name || "?",
-        icon: cat?.icon || "CircleDollarSign",
+        icon: cat?.icon || "CurrencyDollar",
         current,
         previous,
         delta,
@@ -666,7 +666,7 @@ export function useAnalyticsData() {
         wallet_id: sorted[0].wallet_id,
         category_id: sorted[0].category_id,
         category_name: cat?.name || "?",
-        category_icon: cat?.icon || "CircleDollarSign",
+        category_icon: cat?.icon || "CurrencyDollar",
         amount: Math.round(avgAmount),
         amount_variance: Math.round(variance),
         frequency,
