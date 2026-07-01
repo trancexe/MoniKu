@@ -199,11 +199,19 @@ export function TransactionHistory() {
                 <RevealStagger className="space-y-2">
                   {group.items.map((trx) => {
                     const category = getCategory(trx.category_id);
-                    const Icon = (
-                      category?.icon
-                        ? Icons[category.icon as keyof typeof Icons]
-                        : Icons.CurrencyDollar
+                    let Icon = (
+                      (category?.icon && Icons[category.icon as keyof typeof Icons]) || Icons.CurrencyDollar
                     ) as unknown as React.ComponentType<{ className?: string, weight?: string }>;
+                    let categoryName = category?.name || t("transaction.categoryOther");
+
+                    if (trx.category_id === "system-debt-creation") {
+                      Icon = Icons.Users as unknown as React.ComponentType<{ className?: string, weight?: string }>;
+                      categoryName = "Pencatatan Hutang/Piutang";
+                    } else if (trx.category_id === "system-repayment") {
+                      Icon = Icons.Handshake as unknown as React.ComponentType<{ className?: string, weight?: string }>;
+                      categoryName = "Pelunasan Hutang/Piutang";
+                    }
+
                     const isIncome = trx.type === "income";
 
                     return (
@@ -228,7 +236,7 @@ export function TransactionHistory() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">
-                              {category?.name || t("transaction.categoryOther")}
+                              {categoryName}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
                               {formatTime(trx.date)}

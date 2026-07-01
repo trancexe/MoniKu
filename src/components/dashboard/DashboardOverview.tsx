@@ -101,12 +101,18 @@ export function DashboardOverview() {
     [selectedWalletId]
   );
   const categories = useLiveQuery(() => db.categories.toArray());
+  const activeDebts = useLiveQuery(() => db.debt_loans.where("status").equals("active").toArray());
 
-  const isLoading = walletsLoading || !transactions || !categories;
+  const isLoading = walletsLoading || !transactions || !categories || activeDebts === undefined;
+
+  const totalPiutang = (activeDebts ?? []).filter(d => d.type === 'loan').reduce((acc, d) => acc + d.remaining_amount, 0);
+  const totalHutang = (activeDebts ?? []).filter(d => d.type === 'debt').reduce((acc, d) => acc + d.remaining_amount, 0);
 
   const displayedBalance = effectiveWalletId
     ? activeWallet?.current_balance ?? 0
     : wallets.reduce((acc, wallet) => acc + wallet.current_balance, 0);
+
+  const netAsset = displayedBalance + totalPiutang - totalHutang;
 
   const balanceLabel = effectiveWalletId ? activeWallet?.name ?? "" : t("dashboard.totalBalance");
 
@@ -180,6 +186,14 @@ export function DashboardOverview() {
             ? t("dashboard.balanceHidden")
             : formatCurrency(displayedBalance)}
         </h2>
+        {!effectiveWalletId && (
+          <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between text-sm">
+            <span className="text-zinc-400">Kekayaan Bersih (Net Asset)</span>
+            <span className="font-medium text-zinc-100 tabular-nums">
+              {isBalanceHidden ? t("dashboard.balanceHidden") : formatCurrency(netAsset)}
+            </span>
+          </div>
+        )}
       </section>
 
       {/* Wallet Card Selector — each card shows its own balance, tap to filter */}
@@ -271,7 +285,17 @@ export function DashboardOverview() {
             <RevealStagger className="space-y-2.5">
               {transactions.map((trx) => {
                 const category = getCategory(trx.category_id);
-                const Icon = ((category?.icon && Icons[category.icon as keyof typeof Icons]) || Icons.CurrencyDollar) as React.ElementType;
+                let Icon = ((category?.icon && Icons[category.icon as keyof typeof Icons]) || Icons.CurrencyDollar) as React.ElementType;
+                let categoryName = category?.name || t("transaction.categoryOther");
+
+                if (trx.category_id === "system-debt-creation") {
+                  Icon = Icons.Users as React.ElementType;
+                  categoryName = "Pencatatan Hutang/Piutang";
+                } else if (trx.category_id === "system-repayment") {
+                  Icon = Icons.Handshake as React.ElementType;
+                  categoryName = "Pelunasan Hutang/Piutang";
+                }
+
                 const isIncome = trx.type === 'income';
 
                 return (
@@ -293,7 +317,7 @@ export function DashboardOverview() {
                         <Icon weight="duotone" className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-sm sm:text-base truncate">{category?.name || t("transaction.categoryOther")}</p>
+                        <p className="font-medium text-sm sm:text-base truncate">{categoryName}</p>
                         <p className="text-xs sm:text-sm text-muted-foreground truncate">{dayjs(trx.date).format('D MMM YYYY, HH:mm')} • {trx.notes || '-'}</p>
                       </div>
                     </div>

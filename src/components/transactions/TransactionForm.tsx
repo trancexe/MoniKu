@@ -10,10 +10,13 @@ import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useT, useFormatLocale } from "@/lib/i18n";
+import { useHorizontalScroll } from "@/lib/useHorizontalScroll";
 
 export function TransactionForm() {
   const t = useT();
   const { formatCurrencyRaw } = useFormatLocale();
+  const scrollCategoryRef = useHorizontalScroll<HTMLDivElement>();
+  const scrollWalletRef = useHorizontalScroll<HTMLDivElement>();
 
   // --- Dynamic bottom padding for the scrollable form ---
   // The numpad is `position: fixed` (sits above the BottomNav), so it overlays
@@ -219,7 +222,10 @@ export function TransactionForm() {
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeCategory")}</div>
-              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
+              <div 
+                ref={scrollCategoryRef}
+                className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+              >
                 {categories?.map(c => {
                   const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.Question) as React.ElementType;
                   const isSelected = categoryId === c.id;
@@ -250,7 +256,10 @@ export function TransactionForm() {
 
             <div className="space-y-2">
               <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeWallet")}</div>
-              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
+              <div 
+                ref={scrollWalletRef}
+                className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+              >
                 {wallets?.map(w => {
                   const Icon = (Icons[w.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
                   const isSelected = walletId === w.id;

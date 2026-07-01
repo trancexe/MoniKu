@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { useFormatLocale, useT } from "@/lib/i18n";
@@ -23,6 +23,12 @@ export function DebtForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
 
+  useEffect(() => {
+    if (wallets && wallets.length > 0 && selectedWallet === null) {
+      setSelectedWallet(wallets[0].id);
+    }
+  }, [wallets, selectedWallet]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [amountModalOpen, setAmountModalOpen] = useState(false);
   const [tempAmountStr, setTempAmountStr] = useState(amountStr);
@@ -39,6 +45,10 @@ export function DebtForm({ onSuccess }: { onSuccess?: () => void }) {
     const parsed = debtSchema.safeParse({ personName, amount: rawAmount });
     if (!parsed.success) {
       return toast.error(parsed.error.issues[0].message);
+    }
+
+    if (!selectedWallet) {
+      return toast.error(t("transaction.selectWallet"));
     }
 
     const amount = parsed.data.amount;
@@ -178,10 +188,10 @@ export function DebtForm({ onSuccess }: { onSuccess?: () => void }) {
 
       <div className="space-y-2">
         <label className="text-xs font-medium text-zinc-500">
-          {t("transaction.typeWallet")} <span className="text-zinc-400 font-normal">(Opsional)</span>
+          {t("transaction.typeWallet")}
         </label>
         <p className="text-[10px] text-zinc-400 mb-2">
-          Pilih dompet jika uang fisik langsung diterima/dikeluarkan. Biarkan kosong jika hanya pencatatan.
+          Pilih dompet yang digunakan untuk transaksi ini.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-2">
           {(wallets || []).map(w => {
