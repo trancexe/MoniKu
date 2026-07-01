@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   PieChart,
   Pie,
@@ -55,6 +55,11 @@ export function CategoryBreakdown({ getCategoryBreakdown, hasData }: CategoryBre
   const { formatCurrency } = useFormatLocale();
   const [period, setPeriod] = useState<Period>("thisMonth");
   const [type, setType] = useState<"expense" | "income">("expense");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const { from, to } = useMemo(() => getPeriodRange(period), [period]);
   const data = useMemo(
@@ -140,39 +145,41 @@ export function CategoryBreakdown({ getCategoryBreakdown, hasData }: CategoryBre
             role="img"
             aria-label={`Category breakdown pie chart for ${type}`}
           >
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-              <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={85}
-                  dataKey="amount"
-                  nameKey="name"
-                  strokeWidth={2}
-                  stroke="var(--color-card)"
-                >
-                  {data.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload || !payload.length) return null;
-                    const item = payload[0].payload as CategoryAggregate;
-                    return (
-                      <div className="rounded-lg bg-popover border border-border p-2.5 shadow-lg text-xs">
-                        <p className="font-medium text-foreground">{item.name}</p>
-                        <p className="text-muted-foreground mt-0.5">
-                          {formatCurrency(item.amount)} · {item.percent}%
-                        </p>
-                      </div>
-                    );
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {isMounted && (
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={85}
+                    dataKey="amount"
+                    nameKey="name"
+                    strokeWidth={2}
+                    stroke="var(--color-card)"
+                  >
+                    {data.map((_, i) => (
+                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const item = payload[0].payload as CategoryAggregate;
+                      return (
+                        <div className="rounded-lg bg-popover border border-border p-2.5 shadow-lg text-xs">
+                          <p className="font-medium text-foreground">{item.name}</p>
+                          <p className="text-muted-foreground mt-0.5">
+                            {formatCurrency(item.amount)} · {item.percent}%
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Center total */}

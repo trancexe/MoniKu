@@ -13,6 +13,7 @@ import { WalletChip } from "@/components/ui/WalletChip";
 import { TransactionEditSheet } from "./TransactionEditSheet";
 import { useT, useFormatLocale } from "@/lib/i18n";
 import { useWalletFilter } from "@/lib/hooks/useWalletFilter";
+import { useHorizontalScroll } from "@/lib/useHorizontalScroll";
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
@@ -25,6 +26,7 @@ export function TransactionHistory() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const scrollWalletRef = useHorizontalScroll<HTMLDivElement>();
 
   const { effectiveWalletId, wallets, isLoading: walletsLoading, setWalletFilter } =
     useWalletFilter();
@@ -106,6 +108,7 @@ export function TransactionHistory() {
       {wallets.length > 0 && (
         <div
           role="tablist"
+          ref={scrollWalletRef}
           aria-label={t("transaction.walletFilter")}
           className="flex gap-2 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden"
         >
