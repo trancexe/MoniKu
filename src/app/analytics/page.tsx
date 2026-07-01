@@ -8,31 +8,31 @@ import { AnalyticsSkeleton } from "@/components/analytics/AnalyticsCard";
 
 // Dynamic imports for chart components (SSR: false to avoid window reference issues)
 const CashFlowChart = dynamic(
-  () => import("@/components/analytics/CashFlowChart").then((m) => m.CashFlowChart),
+  () => import("@/components/analytics/CashFlowChart").then((m) => ({ default: m.CashFlowChart })),
   { ssr: false, loading: () => <AnalyticsSkeleton height="h-[320px]" /> }
 );
 const CategoryBreakdown = dynamic(
-  () => import("@/components/analytics/CategoryBreakdown").then((m) => m.CategoryBreakdown),
+  () => import("@/components/analytics/CategoryBreakdown").then((m) => ({ default: m.CategoryBreakdown })),
   { ssr: false, loading: () => <AnalyticsSkeleton height="h-[420px]" /> }
 );
 const DailyHeatmap = dynamic(
-  () => import("@/components/analytics/DailyHeatmap").then((m) => m.DailyHeatmap),
+  () => import("@/components/analytics/DailyHeatmap").then((m) => ({ default: m.DailyHeatmap })),
   { ssr: false, loading: () => <AnalyticsSkeleton height="h-[240px]" /> }
 );
 const MonthCompare = dynamic(
-  () => import("@/components/analytics/MonthCompare").then((m) => m.MonthCompare),
+  () => import("@/components/analytics/MonthCompare").then((m) => ({ default: m.MonthCompare })),
   { ssr: false, loading: () => <AnalyticsSkeleton height="h-[300px]" /> }
 );
 const SavingRateGauge = dynamic(
-  () => import("@/components/analytics/SavingRateGauge").then((m) => m.SavingRateGauge),
+  () => import("@/components/analytics/SavingRateGauge").then((m) => ({ default: m.SavingRateGauge })),
   { ssr: false, loading: () => <AnalyticsSkeleton height="h-[280px]" /> }
 );
 const CashFlowForecast = dynamic(
-  () => import("@/components/analytics/CashFlowForecast").then((m) => m.CashFlowForecast),
+  () => import("@/components/analytics/CashFlowForecast").then((m) => ({ default: m.CashFlowForecast })),
   { ssr: false, loading: () => <AnalyticsSkeleton height="h-[240px]" /> }
 );
 const RecurringDetection = dynamic(
-  () => import("@/components/analytics/RecurringDetection").then((m) => m.RecurringDetection),
+  () => import("@/components/analytics/RecurringDetection").then((m) => ({ default: m.RecurringDetection })),
   { ssr: false, loading: () => <AnalyticsSkeleton height="h-[200px]" /> }
 );
 
