@@ -27,8 +27,8 @@ export function TransactionDeleteDialog({
   const categories = useLiveQuery(() => db.categories.toArray());
   const category = categories?.find((c) => c.id === transaction?.category_id);
   const Icon = category?.icon
-    ? ((Icons[category.icon as keyof typeof Icons] || Icons.CurrencyDollar) as React.ComponentType<{ className?: string }>)
-    : (Icons.CurrencyDollar as React.ComponentType<{ className?: string }>);
+    ? ((Icons[category.icon as keyof typeof Icons] || Icons.CircleDollarSign) as React.ComponentType<{ className?: string }>)
+    : (Icons.CircleDollarSign as React.ComponentType<{ className?: string }>);
 
   const handleDelete = async () => {
     if (!transaction) return;

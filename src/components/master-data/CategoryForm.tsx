@@ -120,7 +120,7 @@ export function CategoryForm({ category, open: externalOpen, onOpenChange: exter
             <Label>Icon</Label>
             <div className="grid grid-cols-5 gap-2 mt-2 max-h-[200px] overflow-y-auto p-1">
               {currentIcons.map(i => {
-                const Icon = (Icons[i as keyof typeof Icons] || Icons.Question) as React.ElementType;
+                const Icon = (Icons[i as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
                 return (
                   <button
                     key={i}

@@ -74,7 +74,7 @@ export function CategoryList() {
         <h4 className="text-sm font-medium text-muted-foreground">{title}</h4>
         <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {list.map((category) => {
-            const Icon = (Icons[category.icon as keyof typeof Icons] || Icons.Question) as React.ElementType;
+            const Icon = (Icons[category.icon as keyof typeof Icons] || Icons.HelpCircle) as React.ElementType;
             return (
               <div key={category.id} className="flex flex-col items-center justify-center space-y-2 rounded-xl border bg-card p-3 shadow-sm text-center relative">
                 <div className="absolute top-1 right-1 flex gap-0.5">
