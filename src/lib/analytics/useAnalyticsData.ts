@@ -87,7 +87,11 @@ export function abbreviateIDR(value: number): string {
 // ─── Main Hook ───────────────────────────────────────────────────
 
 export function useAnalyticsData() {
-  const transactions = useLiveQuery(() => db.transactions.orderBy("date").toArray());
+  const rawTransactions = useLiveQuery(() => db.transactions.orderBy("date").toArray());
+  const transactions = useMemo(() => {
+    if (!rawTransactions) return undefined;
+    return rawTransactions.filter(t => t.category_id !== 'system-transfer');
+  }, [rawTransactions]);
   const categories = useLiveQuery(() => db.categories.toArray());
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const recurringRecords = useLiveQuery(() => db.recurring_transactions.toArray());

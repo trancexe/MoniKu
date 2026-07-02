@@ -24,4 +24,18 @@ export async function seedDatabase() {
       updated_at: Date.now(),
     });
   }
+
+  // Ensure system categories exist (for debt, repayment, and transfer)
+  const systemCategories = [
+    { id: 'system-debt-creation', type: 'expense' as const, name: 'Hutang / Piutang', icon: 'Handshake' },
+    { id: 'system-repayment', type: 'income' as const, name: 'Pelunasan', icon: 'CheckCircle' },
+    { id: 'system-transfer', type: 'expense' as const, name: 'Transfer', icon: 'ArrowsLeftRight' }
+  ];
+
+  for (const sysCat of systemCategories) {
+    const exists = await db.categories.get(sysCat.id);
+    if (!exists) {
+      await db.categories.add(sysCat);
+    }
+  }
 }

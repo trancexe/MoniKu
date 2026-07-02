@@ -64,10 +64,11 @@ export function TransactionForm() {
     notes: z.string().max(100, t("validation.notesMax")).optional(),
   });
 
-  const [type, setType] = useState<'expense' | 'income'>('expense');
+  const [type, setType] = useState<'expense' | 'income' | 'transfer'>('expense');
   const [amountStr, setAmountStr] = useState("0");
   const [categoryId, setCategoryId] = useState<string>("");
   const [walletId, setWalletId] = useState<string>("");
+  const [toWalletId, setToWalletId] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [transactionDate, setTransactionDate] = useState(() => {
     const now = new Date();
@@ -88,7 +89,7 @@ export function TransactionForm() {
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
   const categories = useLiveQuery(() =>
-    db.categories.where("type").equals(type).toArray()
+    db.categories.where("type").equals(type === 'transfer' ? 'expense' : type).toArray()
   , [type]);
 
   const executeTransaction = async (amount: number, parsedNotes: string) => {
@@ -96,28 +97,71 @@ export function TransactionForm() {
     setIsSubmitting(true);
     try {
       await db.transaction('rw', db.transactions, db.wallets, async () => {
-        const currentWallet = await db.wallets.get(walletId);
-        if (!currentWallet) throw new Error("Wallet not found");
+        if (type === 'transfer') {
+          const currentWallet = await db.wallets.get(walletId);
+          const destWallet = await db.wallets.get(toWalletId);
+          if (!currentWallet || !destWallet) throw new Error("Wallet not found");
 
-        await db.transactions.add({
-          id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
-          wallet_id: walletId,
-          category_id: categoryId,
-          type,
-          amount,
-          date: new Date(transactionDate).getTime(),
-          notes: parsedNotes || "",
-          sync_status: 'pending'
-        });
+          const linkedId = (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
+          const txDate = new Date(transactionDate).getTime();
 
-        const newBalance = type === 'income'
-          ? currentWallet.current_balance + amount
-          : currentWallet.current_balance - amount;
+          await db.transactions.add({
+            id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
+            wallet_id: walletId,
+            category_id: "system-transfer",
+            type: "expense",
+            amount,
+            date: txDate,
+            notes: parsedNotes || "Transfer Keluar",
+            sync_status: 'pending',
+            linked_transaction_id: linkedId
+          });
 
-        await db.wallets.update(walletId, {
-          current_balance: newBalance,
-          updated_at: Date.now()
-        });
+          await db.transactions.add({
+            id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
+            wallet_id: toWalletId,
+            category_id: "system-transfer",
+            type: "income",
+            amount,
+            date: txDate,
+            notes: parsedNotes || "Transfer Masuk",
+            sync_status: 'pending',
+            linked_transaction_id: linkedId
+          });
+
+          await db.wallets.update(walletId, {
+            current_balance: currentWallet.current_balance - amount,
+            updated_at: Date.now()
+          });
+
+          await db.wallets.update(toWalletId, {
+            current_balance: destWallet.current_balance + amount,
+            updated_at: Date.now()
+          });
+        } else {
+          const currentWallet = await db.wallets.get(walletId);
+          if (!currentWallet) throw new Error("Wallet not found");
+
+          await db.transactions.add({
+            id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)),
+            wallet_id: walletId,
+            category_id: categoryId,
+            type,
+            amount,
+            date: new Date(transactionDate).getTime(),
+            notes: parsedNotes || "",
+            sync_status: 'pending'
+          });
+
+          const newBalance = type === 'income'
+            ? currentWallet.current_balance + amount
+            : currentWallet.current_balance - amount;
+
+          await db.wallets.update(walletId, {
+            current_balance: newBalance,
+            updated_at: Date.now()
+          });
+        }
       });
 
       setAmountStr("0");
@@ -150,13 +194,18 @@ export function TransactionForm() {
     const amount = parsed.data.amount;
 
     if (!walletId) return toast.error(t("transaction.selectWallet"));
-    if (!categoryId) return toast.error(t("transaction.selectCategory"));
+    if (type === 'transfer') {
+      if (!toWalletId) return toast.error("Pilih dompet tujuan");
+      if (walletId === toWalletId) return toast.error("Pilih dompet yang berbeda");
+    } else {
+      if (!categoryId) return toast.error(t("transaction.selectCategory"));
+    }
 
     try {
       const wallet = await db.wallets.get(walletId);
       if (!wallet) throw new Error("Wallet not found");
 
-      if (type === 'expense' && wallet.current_balance - amount < 0) {
+      if (type !== 'income' && wallet.current_balance - amount < 0) {
         setPendingTransaction({ amount, notes: parsed.data.notes || "" });
         setIsWarningOpen(true);
         return;
@@ -216,46 +265,56 @@ export function TransactionForm() {
             >
               {t("transaction.income")}
             </button>
+            <button
+              role="tab"
+              aria-selected={type === 'transfer'}
+              onClick={() => setType('transfer')}
+              className={`flex-1 rounded-full py-2.5 text-xs font-medium transition-all active:scale-[0.98] ${type === 'transfer' ? 'bg-white shadow text-blue-600 dark:bg-zinc-800 dark:text-blue-400' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            >
+              Transfer
+            </button>
           </div>
 
           {/* Quick Pickers */}
           <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeCategory")}</div>
-              <div 
-                ref={scrollCategoryRef}
-                className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
-              >
-                {categories?.map(c => {
-                  const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.Question) as React.ElementType;
-                  const isSelected = categoryId === c.id;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setCategoryId(c.id);
-                      }}
-                      aria-pressed={isSelected}
-                      className={`flex flex-col items-center justify-center shrink-0 w-[88px] snap-start rounded-2xl border p-3 transition-all ease-spring duration-300 active:scale-[0.94] ${
-                        isSelected 
-                          ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-tinted' 
-                          : 'border-border/50 bg-card text-muted-foreground hover:bg-muted/50 hover:border-border'
-                      }`}
-                    >
-                      <Icon weight={isSelected ? "fill" : "duotone"} className={`h-6 w-6 mb-2 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
-                      <span className={`text-[11px] font-medium text-center line-clamp-1 w-full ${isSelected ? 'opacity-100 font-semibold' : 'opacity-70'}`}>
-                        {c.name}
-                      </span>
-                    </button>
-                  );
-                })}
+            {type !== 'transfer' && (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeCategory")}</div>
+                <div 
+                  ref={scrollCategoryRef}
+                  className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+                >
+                  {categories?.map(c => {
+                    const Icon = (Icons[c.icon as keyof typeof Icons] || Icons.Question) as React.ElementType;
+                    const isSelected = categoryId === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCategoryId(c.id);
+                        }}
+                        aria-pressed={isSelected}
+                        className={`flex flex-col items-center justify-center shrink-0 w-[88px] snap-start rounded-2xl border p-3 transition-all ease-spring duration-300 active:scale-[0.94] ${
+                          isSelected 
+                            ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-tinted' 
+                            : 'border-border/50 bg-card text-muted-foreground hover:bg-muted/50 hover:border-border'
+                        }`}
+                      >
+                        <Icon weight={isSelected ? "fill" : "duotone"} className={`h-6 w-6 mb-2 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
+                        <span className={`text-[11px] font-medium text-center line-clamp-1 w-full ${isSelected ? 'opacity-100 font-semibold' : 'opacity-70'}`}>
+                          {c.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">{t("transaction.typeWallet")}</div>
+              <div className="text-xs font-medium text-muted-foreground">{type === 'transfer' ? "Dari Dompet" : t("transaction.typeWallet")}</div>
               <div 
                 ref={scrollWalletRef}
                 className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
@@ -290,6 +349,44 @@ export function TransactionForm() {
                 })}
               </div>
             </div>
+
+            {type === 'transfer' && (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">Ke Dompet</div>
+                <div 
+                  className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+                >
+                  {wallets?.map(w => {
+                    const Icon = (Icons[w.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
+                    const isSelected = toWalletId === w.id;
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setToWalletId(w.id);
+                        }}
+                        aria-pressed={isSelected}
+                        className={`flex flex-col items-center justify-center shrink-0 w-[100px] snap-start rounded-2xl border p-3 transition-all ease-spring duration-300 active:scale-[0.94] ${
+                          isSelected 
+                            ? 'border-blue-500 bg-blue-500 text-white shadow-md ring-2 ring-blue-500/20 ring-offset-2 ring-offset-background' 
+                            : 'border-border/50 bg-card text-muted-foreground hover:bg-muted/50 hover:border-border'
+                        }`}
+                      >
+                        <Icon weight={isSelected ? "fill" : "duotone"} className={`h-6 w-6 mb-2 ${isSelected ? 'opacity-100' : 'opacity-70'}`} />
+                        <span className={`text-[11px] font-medium text-center line-clamp-2 w-full leading-tight ${isSelected ? 'opacity-100 font-semibold' : 'opacity-70'}`}>
+                          {w.name}
+                        </span>
+                        <span className={`text-[10px] font-medium text-center line-clamp-2 w-full mt-0.5 ${isSelected ? 'opacity-90' : 'opacity-50'}`}>
+                          {formatCurrencyRaw(w.current_balance)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4 px-2">
@@ -335,7 +432,7 @@ export function TransactionForm() {
           {/* Amount Display */}
           <div className="flex flex-col items-center justify-center pb-4">
             <span className="text-xs font-medium text-muted-foreground mb-1">{t("transaction.amount")}</span>
-            <h2 aria-live="polite" aria-atomic="true" className={`text-4xl font-bold tracking-tight ${type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
+            <h2 aria-live="polite" aria-atomic="true" className={`text-4xl font-bold tracking-tight ${type === 'income' ? 'text-green-500' : type === 'transfer' ? 'text-blue-500' : 'text-red-500'}`}>
               {formatCurrencyRaw(parseInt(amountStr || "0", 10))}
             </h2>
           </div>

@@ -32,6 +32,12 @@ export interface Transaction {
    * `lib/debt-utils.ts` whenever this changes.
    */
   debt_id?: string;
+  /**
+   * Optional. Set when a transaction is part of a transfer between wallets.
+   * Links the expense transaction from the source wallet with the income
+   * transaction to the destination wallet.
+   */
+  linked_transaction_id?: string;
 }
 
 export interface DebtLoan {
@@ -118,6 +124,16 @@ db.version(4).stores({
   wallets: 'id, name, updated_at',
   categories: 'id, type, name',
   transactions: 'id, wallet_id, category_id, type, date, sync_status, debt_id',
+  debt_loans: 'id, type, person_name, status, due_date',
+  recurring_transactions: 'id, status, frequency, next_expected_date, [wallet_id+category_id]',
+  security: 'key'
+});
+
+// v5: Add linked_transaction_id index to support transfer between wallets.
+db.version(5).stores({
+  wallets: 'id, name, updated_at',
+  categories: 'id, type, name',
+  transactions: 'id, wallet_id, category_id, type, date, sync_status, debt_id, linked_transaction_id',
   debt_loans: 'id, type, person_name, status, due_date',
   recurring_transactions: 'id, status, frequency, next_expected_date, [wallet_id+category_id]',
   security: 'key'
