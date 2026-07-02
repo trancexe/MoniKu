@@ -244,9 +244,8 @@ export function TransactionForm() {
     <div className="flex flex-col h-full overflow-hidden">
       <div
         className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ paddingBottom: scrollPaddingBottom }}
       >
-        <div className="space-y-6 p-2">
+        <div className="space-y-6 p-2" style={{ paddingBottom: scrollPaddingBottom }}>
           {/* Type Toggle */}
           <div role="tablist" className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900 mx-2 mt-2">
             <button
