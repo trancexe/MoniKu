@@ -61,35 +61,35 @@ export function WalletList() {
       </div>
 
       <div className="grid gap-3">
-        <RevealStagger className="grid gap-3">
+        <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {wallets?.map((wallet) => {
             const Icon = (Icons[wallet.icon as keyof typeof Icons] || Icons.Wallet) as React.ElementType;
             return (
-              <div key={wallet.id} className="flex items-center rounded-xl border bg-card p-4 shadow-sm">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="ml-4 flex-1">
-                  <p className="font-medium">{wallet.name}</p>
-                  <p className="text-sm text-muted-foreground tabular-nums">{formatCurrencyRaw(wallet.current_balance)}</p>
-                </div>
-                <div className="flex items-center gap-1">
+              <div key={wallet.id} className="flex flex-col items-center justify-center space-y-2 rounded-xl border bg-card p-3 shadow-sm text-center relative pt-4">
+                <div className="absolute top-1 right-1 flex gap-0.5">
                   <button
                     type="button"
                     onClick={() => setEditingWallet(wallet)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-60 hover:opacity-100 hover:bg-muted"
                     aria-label={t("common.edit")}
                   >
-                    <Icons.Pencil className="h-4 w-4" />
+                    <Icons.Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setDeletingWallet(wallet)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-60 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
                     aria-label={t("common.delete")}
                   >
-                    <Icons.Trash2 className="h-4 w-4" />
+                    <Icons.Trash2 className="h-3.5 w-3.5" />
                   </button>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col items-center w-full px-1">
+                  <span className="text-xs font-medium line-clamp-1 break-all">{wallet.name}</span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums line-clamp-1">{formatCurrencyRaw(wallet.current_balance)}</span>
                 </div>
               </div>
             );
